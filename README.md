@@ -30,3 +30,5 @@ python3 -m http.server 8080
 - Workflow：`.github/workflows/ci.yml`
 - 觸發時機：`push` 到 `main`、`pull_request` 到 `main`
 - 內容：使用 Node.js 20 執行 `node test.js`
+
+PR CI trigger test
