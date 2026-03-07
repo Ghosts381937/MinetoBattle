@@ -1,0 +1,384 @@
+/* MinetoBattle - 暗色祭壇風格 */
+:root {
+  --bg-dark: #0f0e12;
+  --bg-panel: #1a1820;
+  --bg-card: #24202a;
+  --accent: #c9a227;
+  --accent-dim: #8b7519;
+  --danger: #c94a4a;
+  --success: #4ac96e;
+  --text: #e8e4e0;
+  --text-dim: #9a9590;
+  --border: #3a3542;
+  --font-title: "Noto Serif TC", "Source Han Serif", serif;
+  --font-body: "Noto Sans TC", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-dark);
+  color: var(--text);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(201, 162, 39, 0.08) 0%, transparent 50%);
+}
+
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  padding: 1rem 1.25rem;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+
+.header h1 {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.player-stats {
+  display: flex;
+  gap: 1.25rem;
+  margin-left: auto;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+
+.player-stats strong {
+  color: var(--text);
+}
+
+.tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 1rem;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+.tab {
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 0.95rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  color: var(--text);
+}
+
+.tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.content {
+  flex: 1;
+  padding: 1.25rem;
+}
+
+.panel {
+  display: none;
+}
+
+.panel.active {
+  display: block;
+}
+
+.panel h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.panel .hint {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.item-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+.item-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.item-card .name {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.item-card .desc {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.item-card .price {
+  font-size: 0.85rem;
+  color: var(--accent);
+}
+
+.item-card button {
+  margin-top: 0.25rem;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  border: 1px solid var(--accent-dim);
+  background: rgba(201, 162, 39, 0.2);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.item-card button:hover:not(:disabled) {
+  background: rgba(201, 162, 39, 0.35);
+}
+
+.item-card button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn {
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+
+.btn.primary {
+  background: var(--accent);
+  color: var(--bg-dark);
+}
+
+.btn.primary:hover {
+  background: #d4b030;
+}
+
+.btn.danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+.btn.danger:hover {
+  background: #d85a5a;
+}
+
+.altar-actions {
+  margin-bottom: 1rem;
+}
+
+.log {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  font-size: 0.9rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.log.small {
+  max-height: 120px;
+}
+
+.log .entry {
+  margin-bottom: 0.25rem;
+}
+
+.log .entry:last-child {
+  margin-bottom: 0;
+}
+
+.battle-area {
+  min-height: 180px;
+}
+
+.battle-empty {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-dim);
+  background: var(--bg-card);
+  border-radius: 8px;
+  border: 1px dashed var(--border);
+}
+
+.battle-active {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.battle-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.battle-actions .btn {
+  flex: 1 1 48%;
+}
+
+@media (min-width: 600px) {
+  .battle-actions .btn {
+    flex: 0 0 auto;
+  }
+}
+
+.battle-active.hidden {
+  display: none !important;
+}
+
+.enemy-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.enemy-name {
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.enemy-stats {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: 0.5rem;
+}
+
+.hp-bar {
+  height: 8px;
+  background: var(--bg-dark);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.hp-fill {
+  height: 100%;
+  background: var(--danger);
+  border-radius: 4px;
+  transition: width 0.2s;
+}
+
+.inventory-section {
+  margin-bottom: 1.5rem;
+}
+
+.inventory-section h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  color: var(--text-dim);
+}
+
+.item-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.item-list .tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+}
+
+.item-list .tag .qty {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.equipped-summary {
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  display: grid;
+  gap: 0.25rem;
+}
+
+.equip-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.equip-row .equip-btn {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  border: 1px solid var(--accent-dim);
+  background: rgba(201, 162, 39, 0.16);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.equip-row .equip-btn[disabled] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.footer {
+  padding: 0.75rem 1.25rem;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border);
+}
+
+.game-log {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  max-height: 80px;
+  overflow-y: auto;
+}
+
+.strong-enemy {
+  color: var(--danger);
+}
+
+.loot-up {
+  color: var(--success);
+}
+
+.text-dim {
+  color: var(--text-dim);
+}

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MinetoBattle - 商店・祭壇・戰鬥・交易所</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>MinetoBattle</h1>
+      <div class="player-stats">
+        <span>💰 金錢: <strong id="gold">100</strong></span>
+        <span>⚔️ 戰力: <strong id="power">10</strong></span>
+        <span>❤️ 生命: <strong id="hp">100</strong> / <strong id="hpMax">100</strong></span>
+        <span>🛡 防禦: <strong id="def">0</strong></span>
+        <span>🏛 層數: <strong id="stage">1</strong></span>
+        <span>⛩ 召喚石: <strong id="stones">2</strong></span>
+      </div>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active" data-tab="store">商店</button>
+      <button class="tab" data-tab="altar">召喚祭壇</button>
+      <button class="tab" data-tab="battle">戰鬥</button>
+      <button class="tab" data-tab="exchange">交易所</button>
+      <button class="tab" data-tab="inventory">背包</button>
+    </nav>
+
+    <main class="content">
+      <!-- 商店 -->
+      <section id="store" class="panel active">
+        <h2>🏪 商店 - 購買初始元素</h2>
+        <div id="storeList" class="item-grid"></div>
+      </section>
+
+      <!-- 召喚祭壇 -->
+      <section id="altar" class="panel">
+        <h2>⛩ 召喚祭壇</h2>
+        <p class="hint">消耗召喚素材進行召喚，10~20% 機率遭遇強敵（屬性↑、掉寶↑）</p>
+        <div class="altar-actions">
+          <button id="btnSummon" class="btn primary">進行召喚</button>
+        </div>
+        <div id="altarLog" class="log"></div>
+      </section>
+
+      <!-- 戰鬥 -->
+      <section id="battle" class="panel">
+        <h2>⚔️ 戰鬥</h2>
+        <p class="hint">選擇普攻、重擊、防禦或治療，搭配裝備與屬性通關更高層數。</p>
+        <div id="battleArea" class="battle-area">
+          <div class="battle-empty" id="battleEmpty">請先到召喚祭壇召喚怪物</div>
+          <div id="battleActive" class="battle-active hidden">
+            <div class="enemy-card">
+              <div id="enemyName" class="enemy-name"></div>
+              <div id="enemyStats" class="enemy-stats"></div>
+              <div id="enemyHpBar" class="hp-bar"><div id="enemyHpFill" class="hp-fill"></div></div>
+            </div>
+            <div class="battle-actions">
+              <button id="btnAttack" class="btn danger">普攻</button>
+              <button id="btnHeavy" class="btn danger">重擊</button>
+              <button id="btnDefend" class="btn">防禦</button>
+              <button id="btnHeal" class="btn">治療</button>
+            </div>
+            <div id="battleLog" class="log small"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 交易所 -->
+      <section id="exchange" class="panel">
+        <h2>📦 交易所 - 賣素材／裝備換錢</h2>
+        <div id="exchangeList" class="item-grid"></div>
+        <div id="exchangeLog" class="log"></div>
+      </section>
+
+      <!-- 背包 -->
+      <section id="inventory" class="panel">
+        <h2>🎒 背包</h2>
+        <div class="inventory-section">
+          <h3>召喚素材</h3>
+          <div id="invMaterials" class="item-list"></div>
+        </div>
+        <div class="inventory-section">
+          <h3>進階元素</h3>
+          <div id="invElements" class="item-list"></div>
+        </div>
+        <div class="inventory-section">
+          <h3>裝備</h3>
+          <div id="invEquipment" class="item-list"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div id="gameLog" class="game-log"></div>
+    </footer>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
