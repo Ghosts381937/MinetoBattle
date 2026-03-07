@@ -13,6 +13,36 @@
     { id: 'shadow', name: '暗影獸', type: 'vampire', baseHp: 50, baseAtk: 9 }
   ];
 
+  // ----- Phase 2 constants -----
+  const ENEMY_TYPE_LABELS = {
+    normal: '普通', assassin: '刺客', feral: '野性', shielded: '護盾', vampire: '吸血'
+  };
+
+  const DAILY_QUESTS = [
+    { id: 'q_kill3',    desc: '擊敗 3 隻怪物',        type: 'kills',       target: 3,  reward: { gold: 30 } },
+    { id: 'q_kill10',   desc: '擊敗 10 隻怪物',       type: 'kills',       target: 10, reward: { gold: 80, gems: 1 } },
+    { id: 'q_strong3',  desc: '擊敗 3 隻強敵',        type: 'strongKills', target: 3,  reward: { gold: 50, gems: 1 } },
+    { id: 'q_stage3',   desc: '抵達第 3 層',           type: 'stage',       target: 3,  reward: { gems: 2 } },
+    { id: 'q_buy3',     desc: '在商店購買 3 件商品',   type: 'purchases',   target: 3,  reward: { gold: 25 } }
+  ];
+
+  const ACHIEVEMENTS = [
+    { id: 'ach_kill10',   desc: '擊敗 10 隻怪物',        type: 'kills',       target: 10, reward: { gold: 50 } },
+    { id: 'ach_kill50',   desc: '擊敗 50 隻怪物',        type: 'kills',       target: 50, reward: { gems: 5, gold: 100 } },
+    { id: 'ach_stage5',   desc: '抵達第 5 層',            type: 'stage',       target: 5,  reward: { gems: 3 } },
+    { id: 'ach_stage10',  desc: '抵達第 10 層',           type: 'stage',       target: 10, reward: { gems: 8 } },
+    { id: 'ach_encounter','desc': '遭遇所有怪物種類',    type: 'encountered', target: 5,  reward: { gems: 5 } }
+  ];
+
+  const SPECIAL_STORE_POOL = [
+    { id: 'elite_stone',   name: '精英召喚石',   price: 3, currency: 'gems', desc: '精英召喚：強敵率 +35%，掉寶提升' },
+    { id: 'element_stone', name: '元素召喚石',   price: 4, currency: 'gems', desc: '元素召喚：必獲得進階元素' },
+    { id: 'hp_up',         name: '生命強化藥劑', price: 60, currency: 'gold', desc: '永久 +20 最大生命' },
+    { id: 'def_up',        name: '防禦強化藥劑', price: 60, currency: 'gold', desc: '永久 +1 防禦' },
+    { id: 'crit_up',       name: '暴擊強化藥劑', price: 80, currency: 'gold', desc: '永久 +3% 暴擊率' }
+  ];
+  const SPECIAL_STORE_SLOT_COUNT = 3;
+
   const INITIAL_STATE = {
     gold: 100,
     power: 10,
@@ -44,7 +74,17 @@
     battle: {
       playerStatus: { shield: 0 },
       enemyStatus: { bleedingTurns: 0, stunnedTurns: 0 }
-    }
+    },
+    // Phase 2 additions
+    gems: 0,           // 稀有貨幣 靈晶
+    eliteStones: 0,    // 精英召喚石
+    elementStones: 0,  // 元素召喚石
+    stats: { totalKills: 0, strongKills: 0, totalPurchases: 0 },
+    questClaimed: {},  // questId -> true
+    achClaimed: {},    // achId -> true
+    encountered: {},   // enemyId -> true
+    collectedAffixes: {}, // affix -> count
+    shopRefreshIndex: 0
   };
 
   const state = JSON.parse(JSON.stringify(INITIAL_STATE));
@@ -91,6 +131,12 @@
     if (d) d.textContent = state.def ?? 0;
     const st = document.getElementById('stage');
     if (st) st.textContent = state.stage ?? 1;
+    const ge = document.getElementById('gems');
+    if (ge) ge.textContent = state.gems ?? 0;
+    const es = document.getElementById('eliteStones');
+    if (es) es.textContent = state.eliteStones ?? 0;
+    const ems = document.getElementById('elementStones');
+    if (ems) ems.textContent = state.elementStones ?? 0;
   }
 
   function rand(min, max) {
@@ -146,18 +192,36 @@
   }
 
   function resetPlayerToInitial() {
+    // Preserve quest/achievement/catalogue progress across death
+    const preservedStats = JSON.parse(JSON.stringify(state.stats || {}));
+    const preservedQuestClaimed = JSON.parse(JSON.stringify(state.questClaimed || {}));
+    const preservedAchClaimed = JSON.parse(JSON.stringify(state.achClaimed || {}));
+    const preservedEncountered = JSON.parse(JSON.stringify(state.encountered || {}));
+    const preservedCollectedAffixes = JSON.parse(JSON.stringify(state.collectedAffixes || {}));
+
     const fresh = JSON.parse(JSON.stringify(INITIAL_STATE));
     Object.keys(fresh).forEach(key => {
       state[key] = fresh[key];
     });
+
+    state.stats = preservedStats;
+    state.questClaimed = preservedQuestClaimed;
+    state.achClaimed = preservedAchClaimed;
+    state.encountered = preservedEncountered;
+    state.collectedAffixes = preservedCollectedAffixes;
+
     resetBattleState();
     syncStageTarget();
     recalcStatsFromBaseAndEquipment();
     updateStats();
     renderStore();
+    renderSpecialStore();
     renderBattle();
     renderExchange();
     renderInventory();
+    renderQuests();
+    renderAchievements();
+    renderCatalogue();
   }
 
   function computePlayerDamage(multiplier = 1) {
@@ -206,6 +270,8 @@
       state.stageProgress = 0;
       panelLog('battleLog', `你通過了第 ${clearedStage} 層遺跡！`, 'loot-up');
       log(`通關獎勵：💰 ${rewardGold} 與 ${elem} x1`, 'loot-up');
+      renderQuests();
+      renderAchievements();
     }
     updateStats();
   }
@@ -229,9 +295,15 @@
     });
   }
 
-  function buyItem(id, price) {
-    if (state.gold < price) return;
-    state.gold -= price;
+  function buyItem(id, price, currency) {
+    const cur = currency || 'gold';
+    const balance = cur === 'gems' ? (state.gems || 0) : state.gold;
+    if (balance < price) return;
+    if (cur === 'gems') {
+      state.gems -= price;
+    } else {
+      state.gold -= price;
+    }
     if (id === 'stone') {
       state.summonStones = (state.summonStones || 0) + 1;
       log('購買了 初級召喚石', 'loot-up');
@@ -242,9 +314,31 @@
       state.baseStats.power += 2;
       recalcStatsFromBaseAndEquipment();
       log('使用戰力藥劑，戰力 +2', 'loot-up');
+    } else if (id === 'elite_stone') {
+      state.eliteStones = (state.eliteStones || 0) + 1;
+      log('購買了 精英召喚石', 'loot-up');
+    } else if (id === 'element_stone') {
+      state.elementStones = (state.elementStones || 0) + 1;
+      log('購買了 元素召喚石', 'loot-up');
+    } else if (id === 'hp_up') {
+      state.baseStats.hpMax += 20;
+      recalcStatsFromBaseAndEquipment();
+      log('使用生命強化藥劑，最大生命 +20', 'loot-up');
+    } else if (id === 'def_up') {
+      state.baseStats.def += 1;
+      recalcStatsFromBaseAndEquipment();
+      log('使用防禦強化藥劑，防禦 +1', 'loot-up');
+    } else if (id === 'crit_up') {
+      state.baseStats.critChance += 0.03;
+      recalcStatsFromBaseAndEquipment();
+      log('使用暴擊強化藥劑，暴擊率 +3%', 'loot-up');
     }
+    state.stats = state.stats || {};
+    state.stats.totalPurchases = (state.stats.totalPurchases || 0) + 1;
     updateStats();
     renderStore();
+    renderSpecialStore();
+    renderQuests();
   }
 
   // ----- 召喚祭壇 -----
@@ -274,21 +368,40 @@
     };
   }
 
-  function doSummon() {
+  function doSummon(type) {
+    if (typeof type !== 'string') type = 'normal';
     const logEl = document.getElementById('altarLog');
     if (logEl) logEl.innerHTML = '';
 
-    if (!state.summonStones || state.summonStones < 1) {
-      panelLog('altarLog', '召喚石不足，請到商店購買。');
+    let stoneProp, stoneLabel, strongBonus;
+    if (type === 'elite') {
+      stoneProp = 'eliteStones';
+      stoneLabel = '精英召喚石';
+      strongBonus = 0.35;
+    } else if (type === 'element') {
+      stoneProp = 'elementStones';
+      stoneLabel = '元素召喚石';
+      strongBonus = 0;
+    } else {
+      stoneProp = 'summonStones';
+      stoneLabel = '初級召喚石';
+      strongBonus = 0;
+    }
+
+    if (!state[stoneProp] || state[stoneProp] < 1) {
+      panelLog('altarLog', `${stoneLabel}不足，請到商店購買。`);
       return;
     }
-    state.summonStones -= 1;
+    state[stoneProp] -= 1;
     const cfg = getStageConfig(state.stage);
-    const strong = Math.random() < cfg.strongChance;
+    const strongChance = Math.min(cfg.strongChance + strongBonus, 0.85);
+    const strong = Math.random() < strongChance;
     state.currentEnemy = createEnemy(strong);
+    state.currentEnemy.summonType = type;
     resetBattleState();
 
-    panelLog('altarLog', strong ? '⚠️ 遭遇強敵！屬性與掉寶提升。' : `進行了普通召喚。（第 ${state.stage} 層）`);
+    const typeLabel = type === 'elite' ? '精英召喚' : type === 'element' ? '元素召喚' : '普通召喚';
+    panelLog('altarLog', strong ? `⚠️ 【${typeLabel}】遭遇強敵！屬性與掉寶提升。` : `【${typeLabel}】第 ${state.stage} 層`);
     panelLog('altarLog', `出現：${state.currentEnemy.name}（HP ${state.currentEnemy.hp} / ATK ${state.currentEnemy.atk}）${state.currentEnemy.affix ? ' 詞綴：' + state.currentEnemy.affix : ''}`, strong ? 'strong-enemy' : '');
 
     updateStats();
@@ -318,18 +431,33 @@
   }
 
   function giveDrops(strong) {
-    const matCount = rand(1, strong ? 3 : 2);
+    const summonType = (state.currentEnemy && state.currentEnemy.summonType) || 'normal';
+
+    // Track encounter and kill stats
+    if (state.currentEnemy) {
+      state.encountered = state.encountered || {};
+      state.encountered[state.currentEnemy.id] = true;
+    }
+    state.stats = state.stats || {};
+    state.stats.totalKills = (state.stats.totalKills || 0) + 1;
+    if (strong) state.stats.strongKills = (state.stats.strongKills || 0) + 1;
+
+    const matBonus = summonType === 'elite' ? 1 : 0;
+    const matCount = rand(1, strong ? 3 : 2) + matBonus;
     const matId = 'mat_' + rand(1, 4);
     state.materials[matId] = (state.materials[matId] || 0) + matCount;
     log(`獲得魔獸殘片 x${matCount}`);
 
-    if (strong) {
+    // Elemental summon always drops an element; normal/elite only on strong
+    if (strong || summonType === 'element') {
       const elem = pick(ELEMENT_NAMES);
       state.elements[elem] = (state.elements[elem] || 0) + 1;
       log(`獲得進階元素：${elem}`, 'loot-up');
     }
 
-    const equipRoll = strong ? 0.6 : 0.3;
+    // Elite summon has improved equipment drop rate
+    const equipBaseRoll = strong ? 0.6 : 0.3;
+    const equipRoll = summonType === 'elite' ? Math.min(equipBaseRoll + 0.3, 0.9) : equipBaseRoll;
     if (Math.random() < equipRoll) {
       const affix = pick(AFFIXES);
       const eqPower = rand(1, strong ? 5 : 3);
@@ -353,10 +481,16 @@
         equipped: false
       };
       state.equipment.push(equipment);
+      // Track collected affix for catalogue
+      state.collectedAffixes = state.collectedAffixes || {};
+      state.collectedAffixes[affix] = (state.collectedAffixes[affix] || 0) + 1;
       log(`獲得裝備【${affix}】（${slot}）`, 'loot-up');
     }
 
     advanceStageProgress();
+    renderQuests();
+    renderAchievements();
+    renderCatalogue();
   }
 
   function performPlayerAction(action) {
@@ -590,6 +724,196 @@
   }
 
 
+  // ----- Phase 2: Special Store & Shop Refresh -----
+  function getSpecialStoreSlots() {
+    const idx = state.shopRefreshIndex || 0;
+    const slots = [];
+    for (let i = 0; i < SPECIAL_STORE_SLOT_COUNT; i++) {
+      slots.push(SPECIAL_STORE_POOL[(idx + i) % SPECIAL_STORE_POOL.length]);
+    }
+    return slots;
+  }
+
+  function renderSpecialStore() {
+    const list = document.getElementById('specialStoreList');
+    const btn = document.getElementById('btnShopRefresh');
+    if (!list) return;
+    const slots = getSpecialStoreSlots();
+    list.innerHTML = slots.map(item => {
+      const isGem = item.currency === 'gems';
+      const balance = isGem ? (state.gems || 0) : state.gold;
+      const canBuy = balance >= item.price;
+      const priceStr = isGem
+        ? `<span class="gem-price">💎 ${item.price}</span>`
+        : `💰 ${item.price}`;
+      return `
+        <div class="item-card">
+          <span class="name">${item.name}</span>
+          <span class="desc">${item.desc}</span>
+          <span class="price">${priceStr}</span>
+          <button ${!canBuy ? 'disabled' : ''} data-id="${item.id}" data-price="${item.price}" data-currency="${item.currency}">購買</button>
+        </div>`;
+    }).join('');
+    list.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        buyItem(btn.dataset.id, parseInt(btn.dataset.price, 10), btn.dataset.currency);
+      });
+    });
+    if (btn) btn.disabled = state.gold < 15;
+  }
+
+  function shopRefresh() {
+    if (state.gold < 15) return;
+    state.gold -= 15;
+    state.shopRefreshIndex = ((state.shopRefreshIndex || 0) + SPECIAL_STORE_SLOT_COUNT) % SPECIAL_STORE_POOL.length;
+    log('特殊商品已刷新。');
+    updateStats();
+    renderStore();
+    renderSpecialStore();
+  }
+
+  // ----- Phase 2: Quest helpers -----
+  function getQuestProgress(quest) {
+    const s = state.stats || {};
+    if (quest.type === 'kills') return s.totalKills || 0;
+    if (quest.type === 'strongKills') return s.strongKills || 0;
+    if (quest.type === 'purchases') return s.totalPurchases || 0;
+    if (quest.type === 'stage') return state.stage || 1;
+    if (quest.type === 'encountered') return Object.keys(state.encountered || {}).length;
+    return 0;
+  }
+
+  function renderQuests() {
+    const list = document.getElementById('questList');
+    if (!list) return;
+    list.innerHTML = DAILY_QUESTS.map(quest => {
+      const progress = getQuestProgress(quest);
+      const pct = Math.min(100, Math.round(progress / quest.target * 100));
+      const done = progress >= quest.target;
+      const claimed = !!(state.questClaimed || {})[quest.id];
+      const rewardStr = Object.entries(quest.reward).map(([k, v]) => k === 'gems' ? `💎${v}` : `💰${v}`).join(' ');
+      const btnLabel = claimed ? '已領取' : done ? '領取獎勵' : '未完成';
+      const cardClass = claimed ? 'quest-card claimed' : done ? 'quest-card completed' : 'quest-card';
+      return `
+        <div class="${cardClass}">
+          <div class="quest-desc">${quest.desc}</div>
+          <div class="quest-progress-row">
+            <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+            <span class="progress-label">${progress}/${quest.target}</span>
+          </div>
+          <div class="quest-reward-label">獎勵：${rewardStr}</div>
+          <button class="claim-btn" data-quest="${quest.id}" ${(!done || claimed) ? 'disabled' : ''}>${btnLabel}</button>
+        </div>`;
+    }).join('');
+    list.querySelectorAll('.claim-btn').forEach(btn => {
+      btn.addEventListener('click', () => claimQuest(btn.dataset.quest));
+    });
+  }
+
+  function claimQuest(questId) {
+    const quest = DAILY_QUESTS.find(q => q.id === questId);
+    if (!quest) return;
+    if ((state.questClaimed || {})[questId]) return;
+    if (getQuestProgress(quest) < quest.target) return;
+    state.questClaimed = state.questClaimed || {};
+    state.questClaimed[questId] = true;
+    if (quest.reward.gold) state.gold += quest.reward.gold;
+    if (quest.reward.gems) state.gems = (state.gems || 0) + quest.reward.gems;
+    const rewardStr = Object.entries(quest.reward).map(([k, v]) => k === 'gems' ? `💎${v}` : `💰${v}`).join(' ');
+    panelLog('questLog', `✅ 領取任務【${quest.desc}】獎勵：${rewardStr}`, 'loot-up');
+    updateStats();
+    renderStore();
+    renderSpecialStore();
+    renderQuests();
+  }
+
+  // ----- Phase 2: Achievement helpers -----
+  function getAchievementProgress(ach) {
+    const s = state.stats || {};
+    if (ach.type === 'kills') return s.totalKills || 0;
+    if (ach.type === 'strongKills') return s.strongKills || 0;
+    if (ach.type === 'stage') return state.stage || 1;
+    if (ach.type === 'encountered') return Object.keys(state.encountered || {}).length;
+    return 0;
+  }
+
+  function renderAchievements() {
+    const list = document.getElementById('achievementList');
+    if (!list) return;
+    list.innerHTML = ACHIEVEMENTS.map(ach => {
+      const progress = getAchievementProgress(ach);
+      const pct = Math.min(100, Math.round(progress / ach.target * 100));
+      const done = progress >= ach.target;
+      const claimed = !!(state.achClaimed || {})[ach.id];
+      const rewardStr = Object.entries(ach.reward).map(([k, v]) => k === 'gems' ? `💎${v}` : `💰${v}`).join(' ');
+      const btnLabel = claimed ? '已領取' : done ? '領取獎勵' : '未完成';
+      const cardClass = claimed ? 'quest-card claimed' : done ? 'quest-card completed' : 'quest-card';
+      return `
+        <div class="${cardClass}">
+          <div class="quest-desc">${ach.desc}</div>
+          <div class="quest-progress-row">
+            <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+            <span class="progress-label">${progress}/${ach.target}</span>
+          </div>
+          <div class="quest-reward-label">獎勵：${rewardStr}</div>
+          <button class="claim-btn" data-ach="${ach.id}" ${(!done || claimed) ? 'disabled' : ''}>${btnLabel}</button>
+        </div>`;
+    }).join('');
+    list.querySelectorAll('.claim-btn').forEach(btn => {
+      btn.addEventListener('click', () => claimAch(btn.dataset.ach));
+    });
+  }
+
+  function claimAch(achId) {
+    const ach = ACHIEVEMENTS.find(a => a.id === achId);
+    if (!ach) return;
+    if ((state.achClaimed || {})[achId]) return;
+    if (getAchievementProgress(ach) < ach.target) return;
+    state.achClaimed = state.achClaimed || {};
+    state.achClaimed[achId] = true;
+    if (ach.reward.gold) state.gold += ach.reward.gold;
+    if (ach.reward.gems) state.gems = (state.gems || 0) + ach.reward.gems;
+    const rewardStr = Object.entries(ach.reward).map(([k, v]) => k === 'gems' ? `💎${v}` : `💰${v}`).join(' ');
+    panelLog('achievementLog', `🏆 解鎖成就【${ach.desc}】獎勵：${rewardStr}`, 'loot-up');
+    updateStats();
+    renderStore();
+    renderSpecialStore();
+    renderAchievements();
+  }
+
+  // ----- Phase 2: Catalogue -----
+  function renderCatalogue() {
+    const list = document.getElementById('catalogueList');
+    if (!list) return;
+
+    const encCount = Object.keys(state.encountered || {}).length;
+    const enemyGrid = ENEMY_PROFILES.map(p => {
+      const seen = !!(state.encountered || {})[p.id];
+      const typeLabel = ENEMY_TYPE_LABELS[p.type] || p.type;
+      return seen
+        ? `<div class="catalogue-item encountered"><div class="cat-name">${p.name}</div><div class="cat-type">${typeLabel}</div></div>`
+        : `<div class="catalogue-item unseen"><div class="cat-name">???</div><div class="cat-type">未遭遇</div></div>`;
+    }).join('');
+
+    const affixCount = Object.keys(state.collectedAffixes || {}).length;
+    const affixGrid = AFFIXES.map(affix => {
+      const count = (state.collectedAffixes || {})[affix] || 0;
+      return count > 0
+        ? `<div class="catalogue-item collected"><div class="cat-name">${affix}</div><div class="cat-type">×${count}</div></div>`
+        : `<div class="catalogue-item uncollected"><div class="cat-name">${affix}</div><div class="cat-type">未收集</div></div>`;
+    }).join('');
+
+    list.innerHTML = `
+      <div class="catalogue-section">
+        <h3>怪物圖鑑（${encCount}/${ENEMY_PROFILES.length} 已遭遇）</h3>
+        <div class="catalogue-grid">${enemyGrid}</div>
+      </div>
+      <div class="catalogue-section">
+        <h3>詞綴圖鑑（${affixCount}/${AFFIXES.length} 已收集）</h3>
+        <div class="catalogue-grid">${affixGrid}</div>
+      </div>`;
+  }
+
   // ----- 分頁 -----
   function initTabs() {
     document.querySelectorAll('.tab').forEach(tab => {
@@ -604,7 +928,13 @@
     });
   }
 
-  document.getElementById('btnSummon').addEventListener('click', doSummon);
+  document.getElementById('btnSummon').addEventListener('click', () => doSummon('normal'));
+  const eliteBtn = document.getElementById('btnEliteSummon');
+  if (eliteBtn) eliteBtn.addEventListener('click', () => doSummon('elite'));
+  const elementBtn = document.getElementById('btnElementSummon');
+  if (elementBtn) elementBtn.addEventListener('click', () => doSummon('element'));
+  const refreshBtn = document.getElementById('btnShopRefresh');
+  if (refreshBtn) refreshBtn.addEventListener('click', shopRefresh);
   document.getElementById('btnAttack').addEventListener('click', function () {
     performPlayerAction('attack');
   });
@@ -626,7 +956,11 @@
   recalcStatsFromBaseAndEquipment();
   updateStats();
   renderStore();
+  renderSpecialStore();
   renderBattle();
   renderExchange();
   renderInventory();
+  renderQuests();
+  renderAchievements();
+  renderCatalogue();
 })();
