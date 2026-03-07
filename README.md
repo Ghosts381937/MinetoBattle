@@ -24,3 +24,9 @@ python3 -m http.server 8080
 
 - **Node**（需安裝 Node.js）：`node test.js` — 檢查專案結構、HTML/CSS/JS、mock 執行、數值邏輯。
 - **瀏覽器**：用本地伺服器開啟 `test.html`（例：`npx serve .` 後開 `/test.html`）— 自動執行商店購買、召喚、戰鬥、掉落、交易所、背包、分頁切換及「召喚石不足」提示等流程。
+
+## CI（GitHub Actions）
+
+- Workflow：`.github/workflows/ci.yml`
+- 觸發時機：`push` 到 `main`、`pull_request` 到 `main`
+- 內容：使用 Node.js 20 執行 `node test.js`
