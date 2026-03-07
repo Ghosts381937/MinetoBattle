@@ -1,8 +1,0 @@
-{
-    "chat.tools.terminal.autoApprove": {
-        "/^pwd && git rev-parse --is-inside-work-tree 2>/dev/null \\|\\| echo NOT_GIT_REPO && git status -sb 2>/dev/null \\|\\| true && command -v gh \\|\\| echo GH_NOT_FOUND$/": {
-            "approve": true,
-            "matchCommandLine": true
-        }
-    }
-}
