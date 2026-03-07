@@ -28,7 +28,7 @@
       critChance: 0.05,
       critMult: 1.5
     },
-    materials: {},      // 召喚素材 id -> count
+    materials: {},      // 魔獸殘片 id -> count
     elements: {},       // 進階元素 id -> count
     equipment: [],      // 裝備背包
     equipmentSlots: {   // 當前已裝備物品
@@ -37,7 +37,7 @@
       accessory: null
     },
     currentEnemy: null,
-    summonStones: 2,    // 初級召喚石，起始給 2 個
+    summonStones: 2,    // 初級召喚石，唯一召喚貨幣
     stage: 1,
     stageProgress: 0,
     stageTarget: 3,
@@ -321,7 +321,7 @@
     const matCount = rand(1, strong ? 3 : 2);
     const matId = 'mat_' + rand(1, 4);
     state.materials[matId] = (state.materials[matId] || 0) + matCount;
-    log(`獲得召喚素材 x${matCount}`);
+    log(`獲得魔獸殘片 x${matCount}`);
 
     if (strong) {
       const elem = pick(ELEMENT_NAMES);
@@ -453,7 +453,7 @@
       const price = 5;
       nodes.push(`
         <div class="item-card">
-          <span class="name">召喚素材 ${id.replace('mat_', '#')}</span>
+          <span class="name">魔獸殘片 ${id.replace('mat_', '#')}</span>
           <span class="desc">數量：${qty}</span>
           <span class="price">賣出可得 💰 ${price * qty}</span>
           <button data-type="material" data-id="${id}" data-qty="${qty}" data-price="${price}">全部賣出</button>
@@ -481,7 +481,7 @@
         </div>`);
     });
 
-    list.innerHTML = nodes.length ? nodes.join('') : '<p class="hint">暫無可出售物品。擊敗怪物可獲得召喚素材與裝備。</p>';
+    list.innerHTML = nodes.length ? nodes.join('') : '<p class="hint">暫無可出售物品。擊敗怪物可獲得魔獸殘片（副產物）與裝備。</p>';
     list.querySelectorAll('button').forEach(btn => {
       btn.addEventListener('click', () => {
         const type = btn.dataset.type;
@@ -491,7 +491,7 @@
           const qty = parseInt(btn.dataset.qty, 10);
           state.gold += price * qty;
           state.materials[id] = 0;
-          panelLog('exchangeLog', `賣出召喚素材，獲得 💰 ${price * qty}`);
+          panelLog('exchangeLog', `賣出魔獸殘片，獲得 💰 ${price * qty}`);
         } else if (type === 'element') {
           const id = btn.dataset.id;
           const qty = parseInt(btn.dataset.qty, 10);
@@ -527,7 +527,7 @@
     if (mats) {
       const entries = Object.entries(state.materials).filter(([, q]) => q > 0);
       mats.innerHTML = entries.length
-        ? entries.map(([id, q]) => `<span class="tag">素材${id.replace('mat_', '#')} <span class="qty">×${q}</span></span>`).join('')
+        ? entries.map(([id, q]) => `<span class="tag">殘片${id.replace('mat_', '#')} <span class="qty">×${q}</span></span>`).join('')
         : '<span class="text-dim">無</span>';
     }
     if (elems) {

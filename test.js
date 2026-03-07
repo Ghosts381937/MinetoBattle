@@ -217,7 +217,7 @@ if (!canBuy(storeItemsLogic[0])) ok('金錢 0 時無法購買召喚石（15）')
 else fail('金錢 0 時不應可購買');
 
 gold += materialSellPrice * 3;
-if (gold >= 15 && canBuy(storeItemsLogic[0])) ok('賣出召喚素材得 15 後可購買召喚石');
+if (gold >= 15 && canBuy(storeItemsLogic[0])) ok('賣出魔獸殘片得 15 後可購買召喚石');
 else fail('賣出得錢後應可購買召喚石');
 
 gold = 0;
