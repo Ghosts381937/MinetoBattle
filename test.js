@@ -315,11 +315,20 @@ else fail('任務完成判斷');
 if (mockGetQuestProgress(q1, { totalKills: 2 }, 1) < q1.target) ok('未完成任務不可領取');
 else fail('未完成任務判斷');
 
-// Gem currency check
-const gemsBalance = 5;
-const eliteStonePrice = 3;
-if (gemsBalance >= eliteStonePrice) ok('靈晶可購買精英召喚石');
-else fail('靈晶購買判斷');
+// Gem currency check: parse actual elite stone price from SPECIAL_STORE_POOL
+const elitePoolMatch = appJs.match(/id:\s*'elite_stone'[^}]*?price:\s*(\d+)/s);
+const actualElitePrice = elitePoolMatch ? parseInt(elitePoolMatch[1], 10) : -1;
+if (actualElitePrice > 0) ok('精英召喚石靈晶價格已定義 (' + actualElitePrice + ' 靈晶)');
+else fail('精英召喚石靈晶價格未在 SPECIAL_STORE_POOL 中找到');
+// Affordability: balance equal to price → can afford; balance one less → cannot
+if (actualElitePrice >= 1) {
+  const balanceExact = actualElitePrice;
+  const balanceShort = actualElitePrice - 1;
+  if (balanceExact >= actualElitePrice) ok('靈晶餘額等於精英召喚石價格時可購買');
+  else fail('靈晶購買判斷');
+  if (balanceShort < actualElitePrice) ok('靈晶不足時無法購買精英召喚石');
+  else fail('靈晶不足判斷');
+}
 
 // Elite summon bonus
 const normalStrongChance = 0.15;

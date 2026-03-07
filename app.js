@@ -31,7 +31,7 @@
     { id: 'ach_kill50',   desc: '擊敗 50 隻怪物',        type: 'kills',       target: 50, reward: { gems: 5, gold: 100 } },
     { id: 'ach_stage5',   desc: '抵達第 5 層',            type: 'stage',       target: 5,  reward: { gems: 3 } },
     { id: 'ach_stage10',  desc: '抵達第 10 層',           type: 'stage',       target: 10, reward: { gems: 8 } },
-    { id: 'ach_encounter','desc': '遭遇所有怪物種類',    type: 'encountered', target: 5,  reward: { gems: 5 } }
+    { id: 'ach_encounter', desc: '遭遇所有怪物種類',    type: 'encountered', target: 5,  reward: { gems: 5 } }
   ];
 
   const SPECIAL_STORE_POOL = [
@@ -192,12 +192,13 @@
   }
 
   function resetPlayerToInitial() {
-    // Preserve quest/achievement/catalogue progress across death
+    // Preserve quest/achievement/catalogue progress and gems across death
     const preservedStats = JSON.parse(JSON.stringify(state.stats || {}));
     const preservedQuestClaimed = JSON.parse(JSON.stringify(state.questClaimed || {}));
     const preservedAchClaimed = JSON.parse(JSON.stringify(state.achClaimed || {}));
     const preservedEncountered = JSON.parse(JSON.stringify(state.encountered || {}));
     const preservedCollectedAffixes = JSON.parse(JSON.stringify(state.collectedAffixes || {}));
+    const preservedGems = state.gems || 0;
 
     const fresh = JSON.parse(JSON.stringify(INITIAL_STATE));
     Object.keys(fresh).forEach(key => {
@@ -209,6 +210,7 @@
     state.achClaimed = preservedAchClaimed;
     state.encountered = preservedEncountered;
     state.collectedAffixes = preservedCollectedAffixes;
+    state.gems = preservedGems;
 
     resetBattleState();
     syncStageTarget();
@@ -266,6 +268,8 @@
       state.gold += rewardGold;
       state.elements[elem] = (state.elements[elem] || 0) + 1;
       state.stage += 1;
+      if (!state.stats) state.stats = {};
+      state.stats.maxStage = Math.max(state.stats.maxStage || 1, state.stage);
       syncStageTarget();
       state.stageProgress = 0;
       panelLog('battleLog', `你通過了第 ${clearedStage} 層遺跡！`, 'loot-up');
@@ -754,9 +758,9 @@
           <button ${!canBuy ? 'disabled' : ''} data-id="${item.id}" data-price="${item.price}" data-currency="${item.currency}">購買</button>
         </div>`;
     }).join('');
-    list.querySelectorAll('button').forEach(btn => {
-      btn.addEventListener('click', () => {
-        buyItem(btn.dataset.id, parseInt(btn.dataset.price, 10), btn.dataset.currency);
+    list.querySelectorAll('button').forEach(buyBtn => {
+      buyBtn.addEventListener('click', () => {
+        buyItem(buyBtn.dataset.id, parseInt(buyBtn.dataset.price, 10), buyBtn.dataset.currency);
       });
     });
     if (btn) btn.disabled = state.gold < 15;
@@ -764,8 +768,37 @@
 
   function shopRefresh() {
     if (state.gold < 15) return;
+    const poolLength = SPECIAL_STORE_POOL.length;
+    const slotCount = SPECIAL_STORE_SLOT_COUNT;
+    const currentIndex = state.shopRefreshIndex || 0;
+
+    // Collect IDs currently visible
+    const currentIds = new Set();
+    for (let i = 0; i < slotCount; i++) {
+      const item = SPECIAL_STORE_POOL[(currentIndex + i) % poolLength];
+      if (item && item.id !== null && item.id !== undefined) currentIds.add(item.id);
+    }
+
+    // Find the next start index with minimum overlap with current slots
+    const defaultNextIndex = (currentIndex + slotCount) % poolLength;
+    let bestIndex = defaultNextIndex;
+    let bestOverlap = Number.POSITIVE_INFINITY;
+    for (let candidate = 0; candidate < poolLength; candidate++) {
+      if (candidate === currentIndex) continue;
+      let overlap = 0;
+      for (let i = 0; i < slotCount; i++) {
+        const item = SPECIAL_STORE_POOL[(candidate + i) % poolLength];
+        if (item && item.id !== null && item.id !== undefined && currentIds.has(item.id)) overlap++;
+      }
+      if (overlap < bestOverlap ||
+          (overlap === bestOverlap && candidate === defaultNextIndex)) {
+        bestOverlap = overlap;
+        bestIndex = candidate;
+      }
+    }
+
     state.gold -= 15;
-    state.shopRefreshIndex = ((state.shopRefreshIndex || 0) + SPECIAL_STORE_SLOT_COUNT) % SPECIAL_STORE_POOL.length;
+    state.shopRefreshIndex = bestIndex;
     log('特殊商品已刷新。');
     updateStats();
     renderStore();
@@ -778,7 +811,7 @@
     if (quest.type === 'kills') return s.totalKills || 0;
     if (quest.type === 'strongKills') return s.strongKills || 0;
     if (quest.type === 'purchases') return s.totalPurchases || 0;
-    if (quest.type === 'stage') return state.stage || 1;
+    if (quest.type === 'stage') return s.maxStage || 1;
     if (quest.type === 'encountered') return Object.keys(state.encountered || {}).length;
     return 0;
   }
@@ -832,7 +865,7 @@
     const s = state.stats || {};
     if (ach.type === 'kills') return s.totalKills || 0;
     if (ach.type === 'strongKills') return s.strongKills || 0;
-    if (ach.type === 'stage') return state.stage || 1;
+    if (ach.type === 'stage') return s.maxStage || 1;
     if (ach.type === 'encountered') return Object.keys(state.encountered || {}).length;
     return 0;
   }
