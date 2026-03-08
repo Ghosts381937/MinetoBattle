@@ -30,3 +30,35 @@ python3 -m http.server 8080
 - Workflow：`.github/workflows/ci.yml`
 - 觸發時機：`push` 到 `main`、`pull_request` 到 `main`
 - 內容：使用 Node.js 20 執行 `node test.js`
+
+## 快速啟動（Client/Server 模式）
+
+一行指令啟動本地伺服器：
+
+```bash
+npm install && npm start
+```
+
+伺服器預設監聽 `http://localhost:3000`。
+
+## API 端點
+
+| 方法   | 路徑               | 說明                               |
+|--------|--------------------|------------------------------------|
+| GET    | `/api/health`      | 伺服器健康檢查，回傳 `{ ok: true }` |
+| POST   | `/api/save`        | 儲存遊戲狀態至伺服器               |
+| GET    | `/api/load`        | 讀取伺服器端最新遊戲存檔           |
+| GET    | `/api/leaderboard` | 取得排行榜（最高分前 100 名）      |
+| POST   | `/api/leaderboard` | 提交分數至排行榜                   |
+
+## Render 部署指南
+
+1. 在 [Render](https://render.com) 建立新的 **Web Service**
+2. 連結此 GitHub Repository
+3. 設定如下：
+   - **Build Command**：`npm install`
+   - **Start Command**：`npm start`
+   - **Environment**：Node
+4. 點擊 **Deploy**，Render 會自動產生公開 URL
+
+> 靜態資源（`index.html`、`style.css`、`app.js`）由 Express 伺服器直接提供，無需額外設定 CDN。

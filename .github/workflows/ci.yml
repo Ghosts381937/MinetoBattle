@@ -24,5 +24,8 @@ jobs:
       - name: Show Node version
         run: node --version
 
+      - name: Install dependencies
+        run: npm install
+
       - name: Run automated tests
         run: node test.js

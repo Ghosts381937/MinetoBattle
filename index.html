@@ -29,6 +29,7 @@
       <button class="tab" data-tab="achievements">成就</button>
       <button class="tab" data-tab="catalogue">圖鑑</button>
       <button class="tab" data-tab="talent">天賦</button>
+      <button class="tab" data-tab="leaderboard">排行榜</button>
     </nav>
 
     <main class="content">
@@ -146,6 +147,18 @@
         <h2>🌟 天賦樹</h2>
         <p class="hint">可用天賦點：<strong id="talentPoints">0</strong></p>
         <div id="talentPanel"></div>
+      </section>
+
+      <!-- 排行榜 -->
+      <section id="leaderboard" class="panel">
+        <h2>🏆 排行榜</h2>
+        <p class="hint">根據最高層數與擊殺數計算分數。每次死亡自動提交成績。</p>
+        <div class="leaderboard-actions">
+          <button id="btnRefreshLeaderboard" class="btn">🔄 重新整理</button>
+        </div>
+        <div id="saveStatus" class="log" style="margin:0.5rem 0;min-height:1.5rem"></div>
+        <p class="hint" style="margin-top:0">遊戲進度在每次行動後自動儲存。</p>
+        <div id="leaderboardList" class="leaderboard-list"></div>
       </section>
     </main>
 

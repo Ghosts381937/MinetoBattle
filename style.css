@@ -950,3 +950,48 @@ body {
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+/* ─── Leaderboard ─────────────────────────────────────────────── */
+.leaderboard-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.leaderboard-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255,255,255,0.04);
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.08);
+  font-size: 0.9rem;
+}
+
+.lb-rank {
+  font-weight: bold;
+  color: var(--accent);
+  min-width: 2rem;
+}
+
+.lb-name {
+  flex: 1;
+}
+
+.lb-score {
+  color: var(--accent);
+  font-weight: bold;
+}
+
+.lb-detail {
+  color: #aaa;
+  font-size: 0.8rem;
+}
