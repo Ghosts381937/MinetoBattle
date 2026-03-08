@@ -1,0 +1,16 @@
+{
+  "name": "minetobattle",
+  "version": "1.0.0",
+  "description": "MinetoBattle - 瀏覽器 RPG，含 Node/Express 後端服務",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

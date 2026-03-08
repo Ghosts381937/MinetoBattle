@@ -48,7 +48,7 @@ npm install && npm start
 | GET    | `/api/health`      | 伺服器健康檢查，回傳 `{ ok: true }` |
 | POST   | `/api/save`        | 儲存遊戲狀態至伺服器               |
 | GET    | `/api/load`        | 讀取伺服器端最新遊戲存檔           |
-| GET    | `/api/leaderboard` | 取得排行榜（最高分前 10 名）       |
+| GET    | `/api/leaderboard` | 取得排行榜（最高分前 100 名）      |
 | POST   | `/api/leaderboard` | 提交分數至排行榜                   |
 
 ## Render 部署指南
