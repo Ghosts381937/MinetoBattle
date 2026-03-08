@@ -320,7 +320,7 @@
   }
 
   function resetPlayerToInitial() {
-    // CS-02/04: auto-save and submit leaderboard score before resetting
+    // Submit leaderboard score and snapshot the death state before resetting
     submitLeaderboard('冒險者');
     saveToServer(null);
 
@@ -369,6 +369,7 @@
     renderAchievements();
     renderCatalogue();
     renderTalent();
+    autoSave();
   }
 
   function computePlayerDamage(multiplier = 1) {
@@ -508,6 +509,7 @@
     renderStore();
     renderSpecialStore();
     renderQuests();
+    autoSave();
   }
 
   // ----- 召喚祭壇 -----
@@ -576,6 +578,7 @@
     updateStats();
     renderBattle();
     document.querySelector('.tab[data-tab="battle"]').click();
+    autoSave();
   }
 
   // ----- 戰鬥 -----
@@ -724,6 +727,7 @@
       renderBattle();
       renderExchange();
       renderInventory();
+      autoSave();
       return;
     }
 
@@ -744,6 +748,8 @@
       panelLog('battleLog', '你已倒下，玩家狀態已重置至初始並重新開始。');
       log('你倒下了，所有玩家狀態已回到初始值。');
       resetPlayerToInitial();
+    } else {
+      autoSave();
     }
   }
 
@@ -831,6 +837,7 @@
         renderStore();
         renderExchange();
         renderInventory();
+        autoSave();
       });
     });
   }
@@ -903,6 +910,7 @@
     recalcStatsFromBaseAndEquipment();
     updateStats();
     renderInventory();
+    autoSave();
   }
 
 
@@ -981,6 +989,7 @@
     updateStats();
     renderStore();
     renderSpecialStore();
+    autoSave();
   }
 
   // ----- Phase 2: Quest helpers -----
@@ -1036,6 +1045,7 @@
     renderStore();
     renderSpecialStore();
     renderQuests();
+    autoSave();
   }
 
   // ----- Phase 2: Achievement helpers -----
@@ -1090,6 +1100,7 @@
     renderStore();
     renderSpecialStore();
     renderAchievements();
+    autoSave();
   }
 
   // ----- Phase 2: Catalogue -----
@@ -1189,6 +1200,7 @@
     updateStats();
     renderTalent();
     log(`選擇職業：${TALENT_SPECS[spec].name}`, '', 'system');
+    autoSave();
   }
 
   function allocateTalent(talentId) {
@@ -1208,6 +1220,7 @@
     updateStats();
     renderTalent();
     log(`分配天賦：${talentId} Lv.${state.talentAlloc[talentId]}`, '', 'system');
+    autoSave();
   }
 
   // ----- Phase 3: Log filter -----
@@ -1267,6 +1280,25 @@
 
   var SAVE_SLOT = 'default';
   var LS_KEY = 'minetobattle_save';
+  var _autoSaveTimer = null;
+  var AUTO_SAVE_DELAY_MS = 2000; // debounce: 2 s after last action
+
+  function autoSave() {
+    if (_autoSaveTimer) clearTimeout(_autoSaveTimer);
+    _autoSaveTimer = setTimeout(function () {
+      saveToServer(function (err) {
+        if (err) showSaveStatus('⚠️ 自動備份（本地）');
+      });
+    }, AUTO_SAVE_DELAY_MS);
+  }
+
+  function autoLoad() {
+    loadFromServer(function (err, data) {
+      if (!err && data && data.ok) {
+        showSaveStatus(data.local ? '📂 已從本地備份載入' : '📂 已從伺服器載入');
+      }
+    });
+  }
 
   function saveToServer(callback) {
     var payload = JSON.stringify({ slot: SAVE_SLOT, state: state });
@@ -1412,8 +1444,9 @@
     var saveBtn = document.getElementById('btnSaveGame');
     if (saveBtn) {
       saveBtn.addEventListener('click', function () {
+        if (_autoSaveTimer) { clearTimeout(_autoSaveTimer); _autoSaveTimer = null; }
         saveToServer(function (err) {
-          showSaveStatus(err ? '❌ 儲存失敗（已備份至本地）' : '✅ 遊戲已儲存');
+          showSaveStatus(err ? '❌ 儲存失敗（已備份至本地）' : '✅ 手動存檔完成');
         });
       });
     }
@@ -1424,7 +1457,7 @@
           if (err || !data || !data.ok) {
             showSaveStatus('❌ 無存檔可載入');
           } else {
-            showSaveStatus(data.local ? '✅ 已從本地備份載入' : '✅ 已從伺服器載入');
+            showSaveStatus(data.local ? '📂 已從本地備份載入' : '📂 已從伺服器載入');
           }
         });
       });
@@ -1474,6 +1507,7 @@
   initLogFilter();
   initOfflineRewards();
   initServerButtons();
+  autoLoad();
 
   // Phase 3: tip close buttons (event delegation)
   if (document.addEventListener) {

@@ -545,6 +545,17 @@ else fail('initServerButtons 函式缺失');
 if (appJs.includes('escHtml')) ok('escHtml XSS 防護函式存在');
 else fail('escHtml 函式缺失');
 
+if (appJs.includes('function autoSave') && appJs.includes('AUTO_SAVE_DELAY_MS')) ok('autoSave 自動存檔函式存在（含防抖延遲）');
+else fail('autoSave 函式缺失');
+
+if (appJs.includes('function autoLoad') && appJs.includes('autoLoad()')) ok('autoLoad 啟動自動載入函式存在');
+else fail('autoLoad 函式缺失');
+
+// autoSave called in key actions
+const autoSaveCallCount = (appJs.match(/autoSave\(\)/g) || []).length;
+if (autoSaveCallCount >= 7) ok('autoSave() 已掛鉤至關鍵玩家行動（' + autoSaveCallCount + ' 處）');
+else fail('autoSave() 掛鉤不足（找到 ' + autoSaveCallCount + ' 處，需至少 7 處）');
+
 // ========== [50c] index.html - 排行榜結構 ==========
 console.log('\n[50c] index.html - 排行榜結構');
 const lbIds = ['leaderboardList', 'btnSaveGame', 'btnLoadGame', 'btnRefreshLeaderboard', 'saveStatus'];
