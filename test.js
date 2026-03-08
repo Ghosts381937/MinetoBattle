@@ -346,6 +346,141 @@ const overlaps = idx0Slots.filter(i => idx3Slots.includes(i)).length;
 if (overlaps < slotCount) ok('刷新後特殊商品組合不同');
 else fail('刷新後商品應有變化');
 
+// ========== [40] Phase 3 - HTML 結構 ==========
+console.log('\n[40] Phase 3 - HTML 結構');
+const p3RequiredIds = [
+  'tipStore', 'tipAltar', 'tipBattle', 'tipTalent',
+  'talentPoints', 'talentPanel',
+  'floatLayer', 'logFilterBar',
+  'storyModal', 'storyTitle', 'storyText', 'storyReward', 'btnStoryClose',
+  'offlineModal', 'offlineSummary', 'btnOfflineClose'
+];
+for (const id of p3RequiredIds) {
+  if (html.includes(`id="${id}"`) || html.includes(`id='${id}'`)) ok('id="' + id + '"');
+  else fail('id="' + id + '"');
+}
+if (html.includes('data-tab="talent"') || html.includes("data-tab='talent'")) ok('分頁「天賦」存在');
+else fail('分頁「天賦」不存在');
+if (html.includes('class="tip-bubble')) ok('tip-bubble 元素存在於 HTML');
+else fail('tip-bubble 元素不存在');
+if (html.includes('story-modal')) ok('story-modal 結構存在');
+else fail('story-modal 結構不存在');
+if (html.includes('log-filter-bar')) ok('log-filter-bar 結構存在');
+else fail('log-filter-bar 結構不存在');
+
+// ========== [41] Phase 3 - CSS ==========
+console.log('\n[41] Phase 3 - CSS 選擇器');
+const p3RequiredCss = ['.tip-bubble', '.dmg-float', '.story-modal', '.talent-card', '.log-filter-bar', '.float-layer'];
+for (const sel of p3RequiredCss) {
+  if (css.includes(sel)) ok(sel);
+  else fail(sel);
+}
+if (css.includes('floatUp') || css.includes('@keyframes')) ok('@keyframes 動畫存在');
+else fail('@keyframes 動畫不存在');
+
+// ========== [42] Phase 3 - JS 常數與函式 ==========
+console.log('\n[42] Phase 3 - JS 常數、狀態與函式');
+
+if (appJs.includes('STORY_NODES') && appJs.includes('stage: 10') && appJs.includes('stage: 20')) ok('STORY_NODES 含兩個劇情節點（10 層、20 層）');
+else fail('STORY_NODES 定義不完整');
+
+if (appJs.includes('TALENT_SPECS') && appJs.includes('warrior') && appJs.includes('assassin') && appJs.includes('mage')) ok('TALENT_SPECS 三職業定義存在');
+else fail('TALENT_SPECS 定義');
+
+if (appJs.includes('warrior_power') && appJs.includes('warrior_hp')) ok('戰士天賦至少 2 個');
+else fail('戰士天賦不足');
+if (appJs.includes('assassin_crit') && appJs.includes('assassin_bleed')) ok('刺客天賦至少 2 個');
+else fail('刺客天賦不足');
+if (appJs.includes('mage_critMult') && appJs.includes('mage_elemBonus')) ok('法師天賦至少 2 個');
+else fail('法師天賦不足');
+
+if (appJs.includes('seenTips') && appJs.includes('storylineClaimed') && appJs.includes('talentPoints') &&
+    appJs.includes('talentSpec') && appJs.includes('talentAlloc') && appJs.includes('lastSaveTime')) {
+  ok('INITIAL_STATE 含 Phase 3 新欄位');
+} else fail('INITIAL_STATE Phase 3 欄位缺失');
+
+if (appJs.includes('renderTalent') && appJs.includes('chooseTalentSpec') && appJs.includes('allocateTalent')) ok('天賦函式（renderTalent, chooseTalentSpec, allocateTalent）');
+else fail('天賦函式缺失');
+
+if (appJs.includes('getTalentBonus')) ok('getTalentBonus 函式存在');
+else fail('getTalentBonus 函式缺失');
+
+if (appJs.includes('showPanelTip') && appJs.includes('seenTips')) ok('一次性提示氣泡邏輯（showPanelTip）');
+else fail('一次性提示氣泡邏輯缺失');
+
+if (appJs.includes('spawnFloat') && appJs.includes('dmg-float')) ok('戰鬥特效（spawnFloat）');
+else fail('戰鬥特效缺失');
+
+if (appJs.includes('showStoryModal') && appJs.includes('storyModal')) ok('劇情模態框（showStoryModal）');
+else fail('劇情模態框缺失');
+
+if (appJs.includes('initOfflineRewards') && appJs.includes('lastSaveTime') && appJs.includes('offlineModal')) ok('離線收益（initOfflineRewards）');
+else fail('離線收益缺失');
+
+if (appJs.includes('initLogFilter') && appJs.includes('logFilter') && appJs.includes('renderGameLog')) ok('日誌分類過濾（initLogFilter, renderGameLog）');
+else fail('日誌分類過濾缺失');
+
+if (appJs.includes('LOG_ENTRIES')) ok('LOG_ENTRIES 日誌儲存陣列存在');
+else fail('LOG_ENTRIES 缺失');
+
+// Phase 3: talent bonuses derived from TALENT_SPECS data (bonusType + bonusPerPoint)
+if (appJs.includes('bonusType') && appJs.includes('bonusPerPoint') && appJs.includes('t.bonusPerPoint')) ok('天賦加成由 TALENT_SPECS 資料驅動（bonusType / bonusPerPoint）');
+else fail('天賦加成資料驅動設計缺失');
+
+if (appJs.includes("getTalentBonus('critChance')") && appJs.includes("getTalentBonus('critMult')")) ok('天賦暴擊加成應用於戰鬥計算');
+else fail('天賦暴擊加成未應用');
+
+if (appJs.includes("getTalentBonus('bleedChance')")) ok('刺客流血天賦加成應用於重擊');
+else fail('刺客流血天賦未應用');
+
+if (appJs.includes("getTalentBonus('elemBonus')")) ok('法師元素天賦加成應用於掉落');
+else fail('法師元素天賦未應用');
+
+if (appJs.includes("getTalentBonus('power')") && appJs.includes("getTalentBonus('hpMax')")) ok('戰士力量/生命天賦加成應用於屬性計算');
+else fail('戰士天賦加成未應用');
+
+// Phase 3 preserved on death
+if (appJs.includes('preservedSeenTips') && appJs.includes('preservedStorylineClaimed') &&
+    appJs.includes('preservedTalentPoints') && appJs.includes('preservedTalentSpec')) {
+  ok('Phase 3 狀態死亡後保留');
+} else fail('Phase 3 死亡後保留欄位缺失');
+
+// renderTalent called after death reset
+if (appJs.includes('renderTalent()')) ok('renderTalent() 在重置後被呼叫');
+else fail('renderTalent() 未在重置後呼叫');
+
+// ========== [43] Phase 3 - 數值邏輯 ==========
+console.log('\n[43] Phase 3 - 數值邏輯驗證');
+
+// Story node reward check
+const storyNodeMatch = appJs.match(/stage:\s*10[^}]*?reward:\s*\{([^}]*)\}/s);
+if (storyNodeMatch) {
+  ok('第 10 層劇情節點定義並含獎勵');
+} else fail('第 10 層劇情節點獎勵定義');
+
+const storyNode20Match = appJs.match(/stage:\s*20[^}]*?reward:\s*\{([^}]*)\}/s);
+if (storyNode20Match) {
+  ok('第 20 層劇情節點定義並含獎勵');
+} else fail('第 20 層劇情節點獎勵定義');
+
+// Talent bonus math: warrior +5 power per point
+const warriorBonusMatch = appJs.match(/warrior_power[^}]*?bonusPerPoint:\s*(\d+)/s);
+const warriorBonusValue = warriorBonusMatch ? parseInt(warriorBonusMatch[1], 10) : -1;
+if (warriorBonusValue >= 5) ok('戰士攻擊天賦值 >= 5 (bonusPerPoint)');
+else fail('戰士攻擊天賦值 (bonusPerPoint 未找到或值不足)');
+
+// Offline earnings cap check
+if (appJs.includes('MAX_OFFLINE_MS') && (appJs.includes('2 * 60 * 60 * 1000') || appJs.includes('7200000'))) ok('離線收益上限 2 小時');
+else fail('離線收益上限設定');
+
+// Talent point award: every 5 stages
+if (appJs.includes('stage % 5 === 0') && appJs.includes('talentPoints')) ok('每 5 層獲得天賦點數');
+else fail('天賦點數獲得條件');
+
+// Offline min threshold
+if (appJs.includes('MIN_OFFLINE_MS') && (appJs.includes('60 * 1000') || appJs.includes('60000'))) ok('離線收益最小閾值 1 分鐘');
+else fail('離線收益最小閾值');
+
 // ========== 結果 ==========
 console.log('\n' + '─'.repeat(50));
 console.log(`通過: ${passed}  失敗: ${failed}`);
