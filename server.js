@@ -1,6 +1,7 @@
 'use strict';
 
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const fs = require('fs');
 const path = require('path');
 
@@ -18,18 +19,35 @@ if (!fs.existsSync(DATA_DIR)) {
 
 app.use(express.json());
 
-// Serve static frontend files
-app.use(express.static(__dirname));
+// ─── Rate limiter (60 requests per minute per IP) ─────────────────────────
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests' }
+});
+
+// ─── Restricted static file serving (frontend assets only) ───────────────
+const ALLOWED_STATIC = new Set(['index.html', 'style.css', 'app.js']);
+app.get('/', apiLimiter, (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+app.get('/:file', apiLimiter, (req, res, next) => {
+  const file = req.params.file;
+  if (ALLOWED_STATIC.has(file)) {
+    return res.sendFile(path.join(__dirname, file));
+  }
+  return next();
+});
 
 // ─── Health ────────────────────────────────────────────────────────────────
 
-app.get('/api/health', (_req, res) => {
+app.get('/api/health', apiLimiter, (_req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
 // ─── Save / Load ──────────────────────────────────────────────────────────
 
-app.post('/api/save', (req, res) => {
+app.post('/api/save', apiLimiter, (req, res) => {
   try {
     const { slot = 'default', state } = req.body;
     if (!state || typeof state !== 'object') {
@@ -41,14 +59,14 @@ app.post('/api/save', (req, res) => {
     }
     const savedAt = new Date().toISOString();
     saves[slot] = { state, savedAt };
-    fs.writeFileSync(SAVES_FILE, JSON.stringify(saves));
+    fs.writeFileSync(SAVES_FILE, JSON.stringify(saves, null, 2));
     res.json({ ok: true, slot, savedAt });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-app.get('/api/load', (req, res) => {
+app.get('/api/load', apiLimiter, (req, res) => {
   try {
     const slot = req.query.slot || 'default';
     if (!fs.existsSync(SAVES_FILE)) {
@@ -67,7 +85,7 @@ app.get('/api/load', (req, res) => {
 
 // ─── Leaderboard ─────────────────────────────────────────────────────────
 
-app.get('/api/leaderboard', (_req, res) => {
+app.get('/api/leaderboard', apiLimiter, (_req, res) => {
   try {
     if (!fs.existsSync(LEADERBOARD_FILE)) {
       return res.json([]);
@@ -79,7 +97,7 @@ app.get('/api/leaderboard', (_req, res) => {
   }
 });
 
-app.post('/api/leaderboard', (req, res) => {
+app.post('/api/leaderboard', apiLimiter, (req, res) => {
   try {
     const { name, score, stage, kills } = req.body;
     if (!name || typeof score !== 'number') {
@@ -93,8 +111,8 @@ app.post('/api/leaderboard', (req, res) => {
     board.push(entry);
     board.sort((a, b) => b.score - a.score);
     board = board.slice(0, 100); // keep top 100
-    fs.writeFileSync(LEADERBOARD_FILE, JSON.stringify(board));
-    const rank = board.findIndex(e => e.name === name && e.score === score) + 1;
+    fs.writeFileSync(LEADERBOARD_FILE, JSON.stringify(board, null, 2));
+    const rank = board.indexOf(entry) + 1;
     res.json({ ok: true, rank });
   } catch (e) {
     res.status(500).json({ error: e.message });

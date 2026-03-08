@@ -499,10 +499,12 @@ if (!fs.existsSync(serverJsPath)) {
   else fail('/api/load 端點');
   if (serverJs.includes('/api/leaderboard')) ok('/api/leaderboard 端點定義存在');
   else fail('/api/leaderboard 端點');
-  if (serverJs.includes('express.static')) ok('靜態檔案服務（express.static）存在');
+  if (serverJs.includes('express.static') || serverJs.includes('sendFile')) ok('靜態檔案服務（express.static / sendFile）存在');
   else fail('靜態檔案服務不存在');
   if (serverJs.includes('express.json')) ok('JSON body parser 存在');
   else fail('JSON body parser 不存在');
+  if (serverJs.includes('rateLimit') || serverJs.includes('429') || serverJs.includes('Too many') || serverJs.includes('express-rate-limit')) ok('API rate limiting 防護存在');
+  else fail('API rate limiting 防護不存在');
 }
 
 if (!fs.existsSync(pkgJsonPath)) {

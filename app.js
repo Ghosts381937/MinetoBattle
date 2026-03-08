@@ -320,6 +320,10 @@
   }
 
   function resetPlayerToInitial() {
+    // CS-02/04: auto-save and submit leaderboard score before resetting
+    submitLeaderboard('冒險者');
+    saveToServer(null);
+
     // Preserve quest/achievement/catalogue progress and gems across death
     const preservedStats = JSON.parse(JSON.stringify(state.stats || {}));
     const preservedQuestClaimed = JSON.parse(JSON.stringify(state.questClaimed || {}));
@@ -1402,14 +1406,6 @@
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
-  }
-
-  // Auto-save on death (before reset) and submit leaderboard score
-  var _origResetPlayer = resetPlayerToInitial;
-  function resetPlayerToInitial() {
-    submitLeaderboard('冒險者');
-    saveToServer(null);
-    _origResetPlayer();
   }
 
   function initServerButtons() {
