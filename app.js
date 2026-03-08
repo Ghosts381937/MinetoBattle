@@ -1271,6 +1271,10 @@
         const panel = document.getElementById(id);
         if (panel) panel.classList.add('active');
         showPanelTip(id);
+        if (id === 'store') {
+          renderStore();
+          renderSpecialStore();
+        }
         if (id === 'leaderboard') renderLeaderboard();
       });
     });
