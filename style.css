@@ -293,12 +293,18 @@ body {
 }
 
 .battle-empty {
-  text-align: center;
-  padding: 2rem;
+  text-align: left;
+  padding: 1rem;
   color: var(--text-dim);
   background: var(--bg-card);
   border-radius: 8px;
-  border: 1px dashed var(--border);
+  border: 1px solid var(--border);
+}
+
+.summon-hub h3 {
+  margin: 0 0 0.5rem;
+  color: var(--text);
+  font-size: 1rem;
 }
 
 .battle-active {

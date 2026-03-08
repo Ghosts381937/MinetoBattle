@@ -21,7 +21,6 @@
 
     <nav class="tabs">
       <button class="tab active" data-tab="store">商店</button>
-      <button class="tab" data-tab="altar">召喚祭壇</button>
       <button class="tab" data-tab="battle">戰鬥</button>
       <button class="tab" data-tab="exchange">交易所</button>
       <button class="tab" data-tab="inventory">背包</button>
@@ -47,35 +46,34 @@
         </div>
       </section>
 
-      <!-- 召喚祭壇 -->
-      <section id="altar" class="panel">
-        <div id="tipAltar" class="tip-bubble hidden">💡 提示：普通召喚消耗初級召喚石；精英/元素召喚需對應特殊召喚石。<button class="tip-close" data-tip="tipAltar">×</button></div>
-        <h2>⛩ 召喚祭壇</h2>
-        <p class="hint">選擇召喚類型：普通/精英/元素，不同類型掉落邏輯有所區別。精英石可從特殊商品購得（需靈晶💎）。</p>
-        <div class="altar-resources">
-          <span>⛩ 召喚石: <strong id="stones">2</strong></span>
-          <span>🌟 精英石: <strong id="eliteStones">0</strong></span>
-          <span>🔮 元素石: <strong id="elementStones">0</strong></span>
-        </div>
-        <div class="altar-actions">
-          <button id="btnSummon" class="btn primary">普通召喚</button>
-          <button id="btnEliteSummon" class="btn elite-btn">精英召喚 🌟</button>
-          <button id="btnElementSummon" class="btn element-btn">元素召喚 🔮</button>
-        </div>
-        <div id="altarLog" class="log"></div>
-      </section>
-
       <!-- 戰鬥 -->
       <section id="battle" class="panel">
+        <div id="tipAltar" class="tip-bubble hidden">💡 提示：普通召喚消耗初級召喚石；精英/元素召喚需對應特殊召喚石。<button class="tip-close" data-tip="tipAltar">×</button></div>
         <div id="tipBattle" class="tip-bubble hidden">💡 提示：使用防禦獲得護盾減傷；重擊傷害高但消耗自身 HP，可觸發流血和暈眩。<button class="tip-close" data-tip="tipBattle">×</button></div>
         <h2>⚔️ 戰鬥</h2>
         <div class="battle-context">
           <span>🏛 層數: <strong id="stage">1</strong></span>
           <span>進度: <strong id="stageProgress">0</strong>/<strong id="stageTarget">3</strong></span>
         </div>
-        <p class="hint">選擇普攻、重擊、防禦或治療，搭配裝備與屬性通關更高層數。</p>
+        <p class="hint">無敵人時先在此召喚；有敵人時在同頁直接戰鬥。</p>
         <div id="battleArea" class="battle-area">
-          <div class="battle-empty" id="battleEmpty">請先到召喚祭壇召喚怪物</div>
+          <div class="battle-empty" id="battleEmpty">
+            <div class="summon-hub">
+              <h3>⛩ 召喚祭壇</h3>
+              <p class="hint">選擇召喚類型：普通/精英/元素，不同類型掉落邏輯有所區別。</p>
+              <div class="altar-resources">
+                <span>⛩ 召喚石: <strong id="stones">2</strong></span>
+                <span>🌟 精英石: <strong id="eliteStones">0</strong></span>
+                <span>🔮 元素石: <strong id="elementStones">0</strong></span>
+              </div>
+              <div class="altar-actions">
+                <button id="btnSummon" class="btn primary">普通召喚</button>
+                <button id="btnEliteSummon" class="btn elite-btn">精英召喚 🌟</button>
+                <button id="btnElementSummon" class="btn element-btn">元素召喚 🔮</button>
+              </div>
+              <div id="altarLog" class="log"></div>
+            </div>
+          </div>
           <div id="floatLayer" class="float-layer"></div>
           <div id="battleActive" class="battle-active hidden">
             <div class="enemy-card">
