@@ -40,8 +40,8 @@ body {
   background: var(--bg-panel);
   border-bottom: 1px solid var(--border);
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: 1rem;
 }
 
@@ -54,15 +54,32 @@ body {
 }
 
 .player-stats {
-  display: flex;
-  gap: 1.25rem;
-  margin-left: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 0.5rem;
   font-size: 0.9rem;
   color: var(--text-dim);
 }
 
+.player-stats > span {
+  display: flex;
+  align-items: baseline;
+  gap: 0.2rem;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-card);
+  white-space: nowrap;
+}
+
 .player-stats strong {
   color: var(--text);
+}
+
+@media (max-width: 560px) {
+  .player-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .tabs {
@@ -202,6 +219,30 @@ body {
   margin-bottom: 1rem;
 }
 
+.altar-resources {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.altar-resources span {
+  display: flex;
+  align-items: baseline;
+  gap: 0.2rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.altar-resources strong {
+  color: var(--text);
+}
+
 .log {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -226,6 +267,29 @@ body {
 
 .battle-area {
   min-height: 180px;
+}
+
+.battle-context {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.battle-context span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+.battle-context strong {
+  color: var(--text);
 }
 
 .battle-empty {

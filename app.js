@@ -246,6 +246,10 @@
     if (d) d.textContent = state.def ?? 0;
     const st = document.getElementById('stage');
     if (st) st.textContent = state.stage ?? 1;
+    const sp = document.getElementById('stageProgress');
+    if (sp) sp.textContent = state.stageProgress ?? 0;
+    const stg = document.getElementById('stageTarget');
+    if (stg) stg.textContent = state.stageTarget ?? 3;
     const ge = document.getElementById('gems');
     if (ge) ge.textContent = state.gems ?? 0;
     const es = document.getElementById('eliteStones');
