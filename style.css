@@ -382,3 +382,224 @@ body {
 .text-dim {
   color: var(--text-dim);
 }
+
+/* ----- Phase 2: Shop Special / Refresh ----- */
+.shop-special {
+  margin-top: 1.25rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+
+.shop-special-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.shop-special-header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--text-dim);
+}
+
+.shop-refresh-btn {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  background: rgba(201, 162, 39, 0.15);
+  border: 1px solid var(--accent-dim);
+  color: var(--accent);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.shop-refresh-btn:hover:not(:disabled) {
+  background: rgba(201, 162, 39, 0.3);
+}
+
+.shop-refresh-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.gem-price {
+  color: #a0c4ff;
+}
+
+/* ----- Phase 2: Summon Types ----- */
+.altar-actions {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.elite-btn {
+  background: #7b5ea7;
+  color: #fff;
+  border: none;
+}
+
+.elite-btn:hover:not(:disabled) {
+  background: #9370bd;
+}
+
+.elite-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.element-btn {
+  background: #2e7d6b;
+  color: #fff;
+  border: none;
+}
+
+.element-btn:hover:not(:disabled) {
+  background: #3aa08a;
+}
+
+.element-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ----- Phase 2: Quest / Achievement ----- */
+.quest-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.quest-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.quest-card.completed {
+  border-color: var(--success);
+}
+
+.quest-card.claimed {
+  opacity: 0.6;
+}
+
+.quest-desc {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.quest-reward-label {
+  font-size: 0.8rem;
+  color: var(--accent);
+}
+
+.quest-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.progress-bar-wrap {
+  flex: 1;
+  height: 8px;
+  background: var(--bg-dark);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 4px;
+  transition: width 0.3s;
+}
+
+.progress-label {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  min-width: 2.5rem;
+  text-align: right;
+}
+
+.claim-btn {
+  align-self: flex-start;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.82rem;
+  border-radius: 6px;
+  border: 1px solid var(--success);
+  background: rgba(74, 201, 110, 0.15);
+  color: var(--success);
+  cursor: pointer;
+}
+
+.claim-btn:hover:not(:disabled) {
+  background: rgba(74, 201, 110, 0.3);
+}
+
+.claim-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ----- Phase 2: Catalogue ----- */
+.catalogue-section {
+  margin-bottom: 1.5rem;
+}
+
+.catalogue-section h3 {
+  margin: 0 0 0.6rem;
+  font-size: 0.95rem;
+  color: var(--text-dim);
+}
+
+.catalogue-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 0.5rem;
+}
+
+.catalogue-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.5rem;
+  text-align: center;
+  font-size: 0.82rem;
+}
+
+.catalogue-item.encountered {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.catalogue-item.unseen {
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.catalogue-item.collected {
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.catalogue-item.uncollected {
+  color: var(--text-dim);
+}
+
+.catalogue-item .cat-name {
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+
+.catalogue-item .cat-type {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}

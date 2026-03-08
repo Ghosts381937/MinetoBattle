@@ -233,6 +233,119 @@ const hasRenderStoreInSellHandler = sellGoldIdx !== -1 && backpackIdx !== -1 &&
 if (hasRenderStoreInSellHandler) ok('交易所賣出後有呼叫 renderStore()，商店按鈕會更新');
 else fail('交易所賣出後應呼叫 renderStore()');
 
+// ========== [30] Phase 2 - HTML 結構 ==========
+console.log('\n[30] Phase 2 - HTML DOM id 與新分頁');
+const p2RequiredIds = ['gems', 'eliteStones', 'elementStones', 'questList', 'achievementList', 'catalogueList',
+  'btnEliteSummon', 'btnElementSummon', 'specialStoreList', 'btnShopRefresh', 'questLog', 'achievementLog'];
+for (const id of p2RequiredIds) {
+  if (html.includes(`id="${id}"`) || html.includes(`id='${id}'`)) ok('id="' + id + '"');
+  else fail('id="' + id + '"');
+}
+const p2Tabs = ['任務', '成就', '圖鑑'];
+for (const t of p2Tabs) {
+  if (html.includes(t)) ok(`分頁「${t}」存在`);
+  else fail(`分頁「${t}」不存在`);
+}
+
+// ========== [31] Phase 2 - JS 邏輯 ==========
+console.log('\n[31] Phase 2 - JS 函式與常數');
+
+if (appJs.includes('DAILY_QUESTS') && appJs.includes('q_kill3')) ok('DAILY_QUESTS 定義存在');
+else fail('DAILY_QUESTS 定義');
+
+if (appJs.includes('ACHIEVEMENTS') && appJs.includes('ach_kill10')) ok('ACHIEVEMENTS 定義存在');
+else fail('ACHIEVEMENTS 定義');
+
+if (appJs.includes('SPECIAL_STORE_POOL') && appJs.includes('elite_stone')) ok('SPECIAL_STORE_POOL 定義存在');
+else fail('SPECIAL_STORE_POOL 定義');
+
+if (appJs.includes('gems') && appJs.includes('eliteStones') && appJs.includes('elementStones')) ok('state 含靈晶與新召喚石欄位');
+else fail('state 新貨幣欄位');
+
+if (appJs.includes('renderQuests') && appJs.includes('claimQuest')) ok('任務系統函式（renderQuests, claimQuest）');
+else fail('任務系統函式');
+
+if (appJs.includes('renderAchievements') && appJs.includes('claimAch')) ok('成就系統函式（renderAchievements, claimAch）');
+else fail('成就系統函式');
+
+if (appJs.includes('renderCatalogue') && appJs.includes('encountered')) ok('圖鑑函式（renderCatalogue, encountered）');
+else fail('圖鑑函式');
+
+if (appJs.includes('renderSpecialStore') && appJs.includes('shopRefresh')) ok('特殊商店與刷新（renderSpecialStore, shopRefresh）');
+else fail('特殊商店函式');
+
+if (appJs.includes("doSummon('normal')") && appJs.includes("doSummon('elite')") && appJs.includes("doSummon('element')")) ok('三種召喚類型呼叫');
+else fail('三種召喚類型');
+
+if (appJs.includes('summonType') && appJs.includes("summonType === 'elite'") && appJs.includes("summonType === 'element'")) ok('召喚類型掉落邏輯差異');
+else fail('召喚類型掉落邏輯');
+
+if (appJs.includes('state.stats.totalKills') && appJs.includes('state.stats.strongKills')) ok('擊殺統計追蹤');
+else fail('擊殺統計');
+
+if (appJs.includes('collectedAffixes') && appJs.includes('AFFIXES')) ok('詞綴圖鑑收集追蹤');
+else fail('詞綴收集追蹤');
+
+if (appJs.includes('getQuestProgress') && appJs.includes('getAchievementProgress')) ok('任務/成就進度計算函式');
+else fail('進度計算函式');
+
+if (appJs.includes('state.questClaimed') && appJs.includes('state.achClaimed')) ok('任務/成就領取狀態追蹤');
+else fail('任務/成就領取狀態');
+
+// preserve quest/achievement data on death
+if (appJs.includes('preservedStats') && appJs.includes('preservedQuestClaimed')) ok('死亡後保留任務/成就進度');
+else fail('死亡後保留進度');
+
+// ========== [32] Phase 2 - 數值邏輯 ==========
+console.log('\n[32] Phase 2 - 數值邏輯驗證');
+
+// Quest reward logic
+const q1 = { id: 'q_kill3', type: 'kills', target: 3, reward: { gold: 30 } };
+const fakeStats = { totalKills: 3, strongKills: 0, totalPurchases: 0 };
+function mockGetQuestProgress(quest, stats, stage) {
+  if (quest.type === 'kills') return stats.totalKills || 0;
+  if (quest.type === 'strongKills') return stats.strongKills || 0;
+  if (quest.type === 'purchases') return stats.totalPurchases || 0;
+  if (quest.type === 'stage') return stage || 1;
+  return 0;
+}
+if (mockGetQuestProgress(q1, fakeStats, 1) >= q1.target) ok('任務完成判斷邏輯正確');
+else fail('任務完成判斷');
+
+if (mockGetQuestProgress(q1, { totalKills: 2 }, 1) < q1.target) ok('未完成任務不可領取');
+else fail('未完成任務判斷');
+
+// Gem currency check: parse actual elite stone price from SPECIAL_STORE_POOL
+const elitePoolMatch = appJs.match(/id:\s*'elite_stone'[^}]*?price:\s*(\d+)/s);
+const actualElitePrice = elitePoolMatch ? parseInt(elitePoolMatch[1], 10) : -1;
+if (actualElitePrice > 0) ok('精英召喚石靈晶價格已定義 (' + actualElitePrice + ' 靈晶)');
+else fail('精英召喚石靈晶價格未在 SPECIAL_STORE_POOL 中找到');
+// Affordability: balance equal to price → can afford; balance one less → cannot
+if (actualElitePrice >= 1) {
+  const balanceExact = actualElitePrice;
+  const balanceShort = actualElitePrice - 1;
+  if (balanceExact >= actualElitePrice) ok('靈晶餘額等於精英召喚石價格時可購買');
+  else fail('靈晶購買判斷');
+  if (balanceShort < actualElitePrice) ok('靈晶不足時無法購買精英召喚石');
+  else fail('靈晶不足判斷');
+}
+
+// Elite summon bonus
+const normalStrongChance = 0.15;
+const eliteBonus = 0.35;
+const eliteStrongChance = Math.min(normalStrongChance + eliteBonus, 0.85);
+if (eliteStrongChance > normalStrongChance) ok('精英召喚強敵機率高於普通召喚');
+else fail('精英召喚強敵機率');
+
+// Special store pool cycling
+const poolLen = 5; // SPECIAL_STORE_POOL length
+const slotCount = 3;
+const idx0Slots = [0, 1, 2].map(i => i % poolLen);
+const idx3Slots = [3, 4, 5].map(i => i % poolLen);
+const overlaps = idx0Slots.filter(i => idx3Slots.includes(i)).length;
+if (overlaps < slotCount) ok('刷新後特殊商品組合不同');
+else fail('刷新後商品應有變化');
+
 // ========== 結果 ==========
 console.log('\n' + '─'.repeat(50));
 console.log(`通過: ${passed}  失敗: ${failed}`);

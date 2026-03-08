@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>MinetoBattle - 商店・祭壇・戰鬥・交易所</title>
+  <title>MinetoBattle - 商店・祭壇・戰鬥・交易所・任務・成就・圖鑑</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -17,6 +17,9 @@
         <span>🛡 防禦: <strong id="def">0</strong></span>
         <span>🏛 層數: <strong id="stage">1</strong></span>
         <span>⛩ 召喚石: <strong id="stones">2</strong></span>
+        <span>💎 靈晶: <strong id="gems">0</strong></span>
+        <span>🌟 精英石: <strong id="eliteStones">0</strong></span>
+        <span>🔮 元素石: <strong id="elementStones">0</strong></span>
       </div>
     </header>
 
@@ -26,6 +29,9 @@
       <button class="tab" data-tab="battle">戰鬥</button>
       <button class="tab" data-tab="exchange">交易所</button>
       <button class="tab" data-tab="inventory">背包</button>
+      <button class="tab" data-tab="quests">任務</button>
+      <button class="tab" data-tab="achievements">成就</button>
+      <button class="tab" data-tab="catalogue">圖鑑</button>
     </nav>
 
     <main class="content">
@@ -33,14 +39,23 @@
       <section id="store" class="panel active">
         <h2>🏪 商店 - 購買召喚石與補給</h2>
         <div id="storeList" class="item-grid"></div>
+        <div class="shop-special">
+          <div class="shop-special-header">
+            <h3>✨ 特殊商品</h3>
+            <button id="btnShopRefresh" class="btn shop-refresh-btn">刷新特殊商品 (💰15)</button>
+          </div>
+          <div id="specialStoreList" class="item-grid"></div>
+        </div>
       </section>
 
       <!-- 召喚祭壇 -->
       <section id="altar" class="panel">
         <h2>⛩ 召喚祭壇</h2>
-        <p class="hint">消耗召喚石進行召喚；魔獸殘片是戰鬥副產物，可在交易所賣錢，未來可用於強化或合成。</p>
+        <p class="hint">選擇召喚類型：普通/精英/元素，不同類型掉落邏輯有所區別。精英石可從特殊商品購得（需靈晶💎）。</p>
         <div class="altar-actions">
-          <button id="btnSummon" class="btn primary">進行召喚</button>
+          <button id="btnSummon" class="btn primary">普通召喚</button>
+          <button id="btnEliteSummon" class="btn elite-btn">精英召喚 🌟</button>
+          <button id="btnElementSummon" class="btn element-btn">元素召喚 🔮</button>
         </div>
         <div id="altarLog" class="log"></div>
       </section>
@@ -90,6 +105,29 @@
           <h3>裝備</h3>
           <div id="invEquipment" class="item-list"></div>
         </div>
+      </section>
+
+      <!-- 任務 -->
+      <section id="quests" class="panel">
+        <h2>📋 任務</h2>
+        <p class="hint">完成任務可獲得金錢與靈晶。任務進度在遊戲中持續累積，不因死亡而重置。</p>
+        <div id="questList" class="quest-list"></div>
+        <div id="questLog" class="log" style="margin-top:0.75rem"></div>
+      </section>
+
+      <!-- 成就 -->
+      <section id="achievements" class="panel">
+        <h2>🏆 長期成就</h2>
+        <p class="hint">達成長期目標可獲得大量靈晶獎勵。成就只可領取一次，進度永久保留。</p>
+        <div id="achievementList" class="quest-list"></div>
+        <div id="achievementLog" class="log" style="margin-top:0.75rem"></div>
+      </section>
+
+      <!-- 圖鑑 -->
+      <section id="catalogue" class="panel">
+        <h2>📖 收集圖鑑</h2>
+        <p class="hint">記錄已遭遇的怪物種類與收集到的裝備詞綴。</p>
+        <div id="catalogueList"></div>
       </section>
     </main>
 
