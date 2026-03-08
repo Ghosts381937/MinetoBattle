@@ -1441,27 +1441,6 @@
   }
 
   function initServerButtons() {
-    var saveBtn = document.getElementById('btnSaveGame');
-    if (saveBtn) {
-      saveBtn.addEventListener('click', function () {
-        if (_autoSaveTimer) { clearTimeout(_autoSaveTimer); _autoSaveTimer = null; }
-        saveToServer(function (err) {
-          showSaveStatus(err ? '❌ 儲存失敗（已備份至本地）' : '✅ 手動存檔完成');
-        });
-      });
-    }
-    var loadBtn = document.getElementById('btnLoadGame');
-    if (loadBtn) {
-      loadBtn.addEventListener('click', function () {
-        loadFromServer(function (err, data) {
-          if (err || !data || !data.ok) {
-            showSaveStatus('❌ 無存檔可載入');
-          } else {
-            showSaveStatus(data.local ? '📂 已從本地備份載入' : '📂 已從伺服器載入');
-          }
-        });
-      });
-    }
     var refreshBtn2 = document.getElementById('btnRefreshLeaderboard');
     if (refreshBtn2) {
       refreshBtn2.addEventListener('click', renderLeaderboard);
