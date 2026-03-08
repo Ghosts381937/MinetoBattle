@@ -603,3 +603,286 @@ body {
   font-size: 0.75rem;
   color: var(--text-dim);
 }
+
+/* ----- Phase 3: First-visit tip bubbles ----- */
+.tip-bubble {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  background: rgba(201, 162, 39, 0.12);
+  border: 1px solid var(--accent-dim);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.85rem;
+  color: var(--accent);
+  margin-bottom: 0.75rem;
+}
+
+.tip-bubble.hidden {
+  display: none;
+}
+
+.tip-bubble span {
+  flex: 1;
+}
+
+.tip-close {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0 0.2rem;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.tip-close:hover {
+  opacity: 1;
+}
+
+/* ----- Phase 3: Floating damage numbers ----- */
+.float-layer {
+  position: relative;
+  height: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+@keyframes floatUp {
+  0%   { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-48px); }
+}
+
+.dmg-float {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.1rem;
+  font-weight: 700;
+  pointer-events: none;
+  /* duration must stay in sync with FLOAT_DURATION_MS in app.js */
+  animation: floatUp 0.8s ease-out forwards;
+  white-space: nowrap;
+}
+
+.dmg-float.float-atk {
+  color: #f5a623;
+}
+
+.dmg-float.float-dmg {
+  color: var(--danger);
+}
+
+.dmg-float.float-loot {
+  color: var(--success);
+}
+
+/* ----- Phase 3: Story / Offline modals ----- */
+.story-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.story-modal.hidden {
+  display: none;
+}
+
+.story-modal-box {
+  background: var(--bg-panel);
+  border: 1px solid var(--accent-dim);
+  border-radius: 12px;
+  padding: 1.5rem;
+  max-width: 480px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.story-modal-box h3 {
+  margin: 0;
+  font-family: var(--font-title);
+  color: var(--accent);
+  font-size: 1.15rem;
+}
+
+.story-modal-box p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text);
+  white-space: pre-line;
+  line-height: 1.6;
+}
+
+.story-reward {
+  font-size: 0.9rem;
+  color: var(--success);
+  font-weight: 600;
+}
+
+/* ----- Phase 3: Log filter bar ----- */
+.log-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-bottom: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.log-filter-btn {
+  padding: 0.2rem 0.55rem;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 0.78rem;
+}
+
+.log-filter-btn.active,
+.log-filter-btn:hover {
+  background: rgba(201, 162, 39, 0.18);
+  border-color: var(--accent-dim);
+  color: var(--accent);
+}
+
+/* ----- Phase 3: Talent tree ----- */
+.talent-spec-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.talent-spec-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.9rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  text-align: center;
+}
+
+.talent-spec-icon {
+  font-size: 1.6rem;
+}
+
+.talent-spec-name {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.talent-spec-desc {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.talent-spec-btn {
+  margin-top: 0.25rem;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  background: rgba(201, 162, 39, 0.2);
+  border: 1px solid var(--accent-dim);
+  color: var(--accent);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.talent-spec-btn:hover {
+  background: rgba(201, 162, 39, 0.35);
+}
+
+.talent-spec-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.talent-change-btn {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  background: rgba(201, 162, 39, 0.12);
+  border: 1px solid var(--accent-dim);
+  color: var(--accent);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.talent-change-btn:hover {
+  background: rgba(201, 162, 39, 0.28);
+}
+
+.talent-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+.talent-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.talent-card.maxed {
+  border-color: var(--success);
+}
+
+.talent-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.talent-desc {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.talent-level {
+  font-size: 0.8rem;
+  color: var(--accent);
+}
+
+.talent-alloc-btn {
+  margin-top: 0.25rem;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.78rem;
+  border-radius: 6px;
+  border: 1px solid var(--accent-dim);
+  background: rgba(201, 162, 39, 0.15);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.talent-alloc-btn:hover:not(:disabled) {
+  background: rgba(201, 162, 39, 0.3);
+}
+
+.talent-alloc-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

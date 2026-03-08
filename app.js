@@ -43,6 +43,53 @@
   ];
   const SPECIAL_STORE_SLOT_COUNT = 3;
 
+  // ----- Phase 3 constants -----
+  const FLOAT_DURATION_MS = 800;      // must match CSS animation duration in floatUp
+  const MAX_OFFLINE_MS   = 2 * 60 * 60 * 1000; // 2-hour offline earnings cap
+  const MIN_OFFLINE_MS   = 60 * 1000;           // minimum 1 minute before offline rewards trigger
+
+  const STORY_NODES = [
+    {
+      stage: 10,
+      title: '迷霧深處的呼喚',
+      text: '你踏入第 10 層，古老符文忽然亮起，低沉聲音傳來：\n「冒險者，你已通過試煉的第一關——繼續深入，真相正等著你揭開。」',
+      reward: { gold: 100, gems: 3 }
+    },
+    {
+      stage: 20,
+      title: '深淵之王的陰影',
+      text: '第 20 層的門扉轟然敞開，碑石上刻著血紅文字：\n「勇者，你已接近我的領域——此處的黑暗遠比你所見過的一切更為可怕。願你的意志堅如磐石……」',
+      reward: { gold: 200, gems: 8 }
+    }
+  ];
+
+  const TALENT_SPECS = {
+    warrior: {
+      name: '戰士', icon: '🗡️',
+      desc: '以力量壓倒敵人，擅長正面戰鬥',
+      talents: [
+        { id: 'warrior_power', name: '蠻力強化', desc: '攻擊力 +5',      maxLevel: 1, bonusType: 'power',      bonusPerPoint: 5    },
+        { id: 'warrior_hp',    name: '鐵壁之軀', desc: '最大生命值 +30', maxLevel: 1, bonusType: 'hpMax',      bonusPerPoint: 30   }
+      ]
+    },
+    assassin: {
+      name: '刺客', icon: '🗡',
+      desc: '以敏捷和精準出其不意',
+      talents: [
+        { id: 'assassin_crit',  name: '致命一擊', desc: '暴擊率 +8%',      maxLevel: 1, bonusType: 'critChance',  bonusPerPoint: 0.08 },
+        { id: 'assassin_bleed', name: '毒刃',     desc: '重擊流血機率 +20%', maxLevel: 1, bonusType: 'bleedChance', bonusPerPoint: 0.20 }
+      ]
+    },
+    mage: {
+      name: '法師', icon: '✨',
+      desc: '召喚元素力量，強化爆發傷害',
+      talents: [
+        { id: 'mage_critMult',  name: '元素共鳴', desc: '暴擊傷害倍率 +0.3',          maxLevel: 1, bonusType: 'critMult',  bonusPerPoint: 0.3  },
+        { id: 'mage_elemBonus', name: '元素掌控', desc: '擊殺時額外元素掉落機率 +20%', maxLevel: 1, bonusType: 'elemBonus', bonusPerPoint: 0.20 }
+      ]
+    }
+  };
+
   const INITIAL_STATE = {
     gold: 100,
     power: 10,
@@ -84,7 +131,15 @@
     achClaimed: {},    // achId -> true
     encountered: {},   // enemyId -> true
     collectedAffixes: {}, // affix -> count
-    shopRefreshIndex: 0
+    shopRefreshIndex: 0,
+    // Phase 3 additions
+    seenTips: {},
+    logFilter: 'all',
+    storylineClaimed: {},
+    talentPoints: 0,
+    talentSpec: null,
+    talentAlloc: {},
+    lastSaveTime: 0
   };
 
   const state = JSON.parse(JSON.stringify(INITIAL_STATE));
@@ -95,13 +150,25 @@
     { id: 'power_up', name: '戰力藥劑', price: 50, desc: '永久 +2 戰力' }
   ];
 
-  function log(msg, className = '') {
+  const LOG_ENTRIES = [];
+
+  function log(msg, className = '', cat = 'system') {
+    LOG_ENTRIES.push({ msg, className, cat, time: new Date() });
+    renderGameLog();
+  }
+
+  function renderGameLog() {
     const el = document.getElementById('gameLog');
     if (!el) return;
-    const line = document.createElement('div');
-    line.className = className;
-    line.textContent = `[${new Date().toLocaleTimeString('zh-TW', { hour12: false })}] ${msg}`;
-    el.appendChild(line);
+    const filter = (state && state.logFilter) || 'all';
+    el.innerHTML = '';
+    const entries = filter === 'all' ? LOG_ENTRIES : LOG_ENTRIES.filter(e => e.cat === filter);
+    entries.slice(-50).forEach(({ msg, className, time }) => {
+      const line = document.createElement('div');
+      if (className) line.className = className;
+      line.textContent = `[${time.toLocaleTimeString('zh-TW', { hour12: false })}] ${msg}`;
+      el.appendChild(line);
+    });
     el.scrollTop = el.scrollHeight;
   }
 
@@ -113,6 +180,54 @@
     line.textContent = msg;
     el.appendChild(line);
     el.scrollTop = el.scrollHeight;
+  }
+
+  // ----- Phase 3 helper functions -----
+  function getTalentBonus(type) {
+    const alloc = state.talentAlloc || {};
+    const spec = state.talentSpec;
+    if (!spec) return 0;
+    for (const t of TALENT_SPECS[spec].talents) {
+      if (t.bonusType === type) return (alloc[t.id] || 0) * t.bonusPerPoint;
+    }
+    return 0;
+  }
+
+  function showPanelTip(tabId) {
+    const tipId = 'tip' + tabId.charAt(0).toUpperCase() + tabId.slice(1);
+    if ((state.seenTips || {})[tipId]) return;
+    const el = document.getElementById(tipId);
+    if (!el) return;
+    state.seenTips = state.seenTips || {};
+    state.seenTips[tipId] = true;
+    el.classList.remove('hidden');
+  }
+
+  function spawnFloat(text, colorClass) {
+    const el = document.getElementById('floatLayer');
+    if (!el) return;
+    const div = document.createElement('div');
+    div.className = 'dmg-float' + (colorClass ? ' ' + colorClass : '');
+    div.textContent = text;
+    el.appendChild(div);
+    setTimeout(function () {
+      if (div.parentNode) div.parentNode.removeChild(div);
+    }, FLOAT_DURATION_MS);
+  }
+
+  function showStoryModal(node) {
+    if (!node) return;
+    const modal = document.getElementById('storyModal');
+    if (!modal) return;
+    const titleEl  = document.getElementById('storyTitle');
+    const textEl   = document.getElementById('storyText');
+    const rewardEl = document.getElementById('storyReward');
+    if (titleEl)  titleEl.textContent  = node.title;
+    if (textEl)   textEl.textContent   = node.text;
+    const rewardStr = Object.entries(node.reward)
+      .map(([k, v]) => k === 'gems' ? `💎${v}` : `💰${v}`).join(' ');
+    if (rewardEl) rewardEl.textContent = '特殊獎勵：' + rewardStr;
+    modal.classList.remove('hidden');
   }
 
   function updateStats() {
@@ -137,6 +252,9 @@
     if (es) es.textContent = state.eliteStones ?? 0;
     const ems = document.getElementById('elementStones');
     if (ems) ems.textContent = state.elementStones ?? 0;
+    const tp = document.getElementById('talentPoints');
+    if (tp) tp.textContent = state.talentPoints ?? 0;
+    state.lastSaveTime = Date.now();
   }
 
   function rand(min, max) {
@@ -182,6 +300,12 @@
     if (state.hp > state.hpMax) {
       state.hp = state.hpMax;
     }
+    // Apply talent bonuses to power and hpMax
+    state.power += getTalentBonus('power');
+    state.hpMax += getTalentBonus('hpMax');
+    if (state.hp > state.hpMax) {
+      state.hp = state.hpMax;
+    }
   }
 
   function resetBattleState() {
@@ -199,6 +323,12 @@
     const preservedEncountered = JSON.parse(JSON.stringify(state.encountered || {}));
     const preservedCollectedAffixes = JSON.parse(JSON.stringify(state.collectedAffixes || {}));
     const preservedGems = state.gems || 0;
+    // Phase 3 preserved fields
+    const preservedSeenTips = JSON.parse(JSON.stringify(state.seenTips || {}));
+    const preservedStorylineClaimed = JSON.parse(JSON.stringify(state.storylineClaimed || {}));
+    const preservedTalentPoints = state.talentPoints || 0;
+    const preservedTalentSpec = state.talentSpec || null;
+    const preservedTalentAlloc = JSON.parse(JSON.stringify(state.talentAlloc || {}));
 
     const fresh = JSON.parse(JSON.stringify(INITIAL_STATE));
     Object.keys(fresh).forEach(key => {
@@ -211,6 +341,12 @@
     state.encountered = preservedEncountered;
     state.collectedAffixes = preservedCollectedAffixes;
     state.gems = preservedGems;
+    // Phase 3 restore
+    state.seenTips = preservedSeenTips;
+    state.storylineClaimed = preservedStorylineClaimed;
+    state.talentPoints = preservedTalentPoints;
+    state.talentSpec = preservedTalentSpec;
+    state.talentAlloc = preservedTalentAlloc;
 
     resetBattleState();
     syncStageTarget();
@@ -224,15 +360,16 @@
     renderQuests();
     renderAchievements();
     renderCatalogue();
+    renderTalent();
   }
 
   function computePlayerDamage(multiplier = 1) {
     let base = state.power + rand(0, 2);
     let dmg = Math.max(1, Math.round(base * multiplier));
     let isCrit = false;
-    const chance = state.critChance ?? 0;
+    const chance = (state.critChance ?? 0) + getTalentBonus('critChance');
     if (Math.random() < chance) {
-      dmg = Math.round(dmg * (state.critMult || 1.5));
+      dmg = Math.round(dmg * ((state.critMult || 1.5) + getTalentBonus('critMult')));
       isCrit = true;
     }
     return { dmg, isCrit };
@@ -273,9 +410,29 @@
       syncStageTarget();
       state.stageProgress = 0;
       panelLog('battleLog', `你通過了第 ${clearedStage} 層遺跡！`, 'loot-up');
-      log(`通關獎勵：💰 ${rewardGold} 與 ${elem} x1`, 'loot-up');
+      log(`通關獎勵：💰 ${rewardGold} 與 ${elem} x1`, 'loot-up', 'loot');
       renderQuests();
       renderAchievements();
+      // Phase 3: award talent point every 5 stages
+      if (state.stage % 5 === 0) {
+        state.talentPoints = (state.talentPoints || 0) + 1;
+        log(`🌟 天賦點數 +1（目前 ${state.talentPoints} 點）`, '', 'system');
+        renderTalent();
+      }
+      // Phase 3: check story nodes
+      const storyNode = STORY_NODES.find(
+        n => n.stage === state.stage && !(state.storylineClaimed || {})[n.stage]
+      );
+      if (storyNode) {
+        state.storylineClaimed = state.storylineClaimed || {};
+        state.storylineClaimed[storyNode.stage] = true;
+        state.gold += storyNode.reward.gold || 0;
+        state.gems = (state.gems || 0) + (storyNode.reward.gems || 0);
+        const rewardStr = Object.entries(storyNode.reward)
+          .map(([k, v]) => k === 'gems' ? `💎${v}` : `💰${v}`).join(' ');
+        log(`📖 劇情解鎖：${storyNode.title}（${rewardStr}）`, 'loot-up', 'system');
+        showStoryModal(storyNode);
+      }
     }
     updateStats();
   }
@@ -310,32 +467,32 @@
     }
     if (id === 'stone') {
       state.summonStones = (state.summonStones || 0) + 1;
-      log('購買了 初級召喚石', 'loot-up');
+      log('購買了 初級召喚石', 'loot-up', 'system');
     } else if (id === 'elixir') {
       state.hp = Math.min(state.hpMax, state.hp + 30);
-      log('使用療傷藥，恢復 30 生命', 'loot-up');
+      log('使用療傷藥，恢復 30 生命', 'loot-up', 'system');
     } else if (id === 'power_up') {
       state.baseStats.power += 2;
       recalcStatsFromBaseAndEquipment();
-      log('使用戰力藥劑，戰力 +2', 'loot-up');
+      log('使用戰力藥劑，戰力 +2', 'loot-up', 'system');
     } else if (id === 'elite_stone') {
       state.eliteStones = (state.eliteStones || 0) + 1;
-      log('購買了 精英召喚石', 'loot-up');
+      log('購買了 精英召喚石', 'loot-up', 'system');
     } else if (id === 'element_stone') {
       state.elementStones = (state.elementStones || 0) + 1;
-      log('購買了 元素召喚石', 'loot-up');
+      log('購買了 元素召喚石', 'loot-up', 'system');
     } else if (id === 'hp_up') {
       state.baseStats.hpMax += 20;
       recalcStatsFromBaseAndEquipment();
-      log('使用生命強化藥劑，最大生命 +20', 'loot-up');
+      log('使用生命強化藥劑，最大生命 +20', 'loot-up', 'system');
     } else if (id === 'def_up') {
       state.baseStats.def += 1;
       recalcStatsFromBaseAndEquipment();
-      log('使用防禦強化藥劑，防禦 +1', 'loot-up');
+      log('使用防禦強化藥劑，防禦 +1', 'loot-up', 'system');
     } else if (id === 'crit_up') {
       state.baseStats.critChance += 0.03;
       recalcStatsFromBaseAndEquipment();
-      log('使用暴擊強化藥劑，暴擊率 +3%', 'loot-up');
+      log('使用暴擊強化藥劑，暴擊率 +3%', 'loot-up', 'system');
     }
     state.stats = state.stats || {};
     state.stats.totalPurchases = (state.stats.totalPurchases || 0) + 1;
@@ -450,13 +607,21 @@
     const matCount = rand(1, strong ? 3 : 2) + matBonus;
     const matId = 'mat_' + rand(1, 4);
     state.materials[matId] = (state.materials[matId] || 0) + matCount;
-    log(`獲得魔獸殘片 x${matCount}`);
+    log(`獲得魔獸殘片 x${matCount}`, '', 'loot');
+    spawnFloat(`+${matCount} 殘片`, 'float-loot');
 
     // Elemental summon always drops an element; normal/elite only on strong
     if (strong || summonType === 'element') {
       const elem = pick(ELEMENT_NAMES);
       state.elements[elem] = (state.elements[elem] || 0) + 1;
-      log(`獲得進階元素：${elem}`, 'loot-up');
+      log(`獲得進階元素：${elem}`, 'loot-up', 'loot');
+    }
+
+    // Phase 3: mage talent elem bonus
+    if (Math.random() < getTalentBonus('elemBonus')) {
+      const elem = pick(ELEMENT_NAMES);
+      state.elements[elem] = (state.elements[elem] || 0) + 1;
+      log(`🔮 元素天賦觸發：${elem}`, 'loot-up', 'loot');
     }
 
     // Elite summon has improved equipment drop rate
@@ -488,7 +653,8 @@
       // Track collected affix for catalogue
       state.collectedAffixes = state.collectedAffixes || {};
       state.collectedAffixes[affix] = (state.collectedAffixes[affix] || 0) + 1;
-      log(`獲得裝備【${affix}】（${slot}）`, 'loot-up');
+      log(`獲得裝備【${affix}】（${slot}）`, 'loot-up', 'loot');
+      spawnFloat(`+裝備【${affix}】`, 'float-loot');
     }
 
     advanceStageProgress();
@@ -506,18 +672,21 @@
     if (action === 'attack') {
       const { dmg, isCrit } = computePlayerDamage(1);
       enemy.hp -= dmg;
+      spawnFloat((isCrit ? '💥' : '') + dmg, 'float-atk');
       panelLog('battleLog', `你使用普攻造成 ${dmg} 點傷害。${isCrit ? '（暴擊！）' : ''}`);
     } else if (action === 'heavy') {
       const { dmg, isCrit } = computePlayerDamage(1.7);
       enemy.hp -= dmg;
       const selfCost = 5;
       state.hp = Math.max(1, state.hp - selfCost);
+      spawnFloat((isCrit ? '💥' : '') + dmg, 'float-atk');
       panelLog('battleLog', `你使用重擊造成 ${dmg} 點傷害，自己承受 ${selfCost} 點反作用力。${isCrit ? '（暴擊！）' : ''}`);
       if (Math.random() < 0.2) {
         enemyStatus.stunnedTurns = 1;
         panelLog('battleLog', '敵人被暈眩一回合！');
       }
-      if (Math.random() < 0.5) {
+      const bleedChance = 0.5 + getTalentBonus('bleedChance');
+      if (Math.random() < bleedChance) {
         enemyStatus.bleedingTurns = 2;
         panelLog('battleLog', '敵人陷入流血狀態。');
       }
@@ -556,6 +725,7 @@
     } else {
       const taken = computeEnemyDamage(enemy);
       state.hp = Math.max(0, state.hp - taken);
+      spawnFloat('-' + taken, 'float-dmg');
       panelLog('battleLog', `對方反擊，你受到 ${taken} 點傷害。`);
     }
 
@@ -799,7 +969,7 @@
 
     state.gold -= 15;
     state.shopRefreshIndex = bestIndex;
-    log('特殊商品已刷新。');
+    log('特殊商品已刷新。', '', 'system');
     updateStats();
     renderStore();
     renderSpecialStore();
@@ -947,6 +1117,128 @@
       </div>`;
   }
 
+  // ----- Phase 3: 天賦樹 -----
+  function renderTalent() {
+    const panel = document.getElementById('talentPanel');
+    if (!panel) return;
+    const tp = state.talentPoints || 0;
+    if (!state.talentSpec) {
+      panel.innerHTML = `
+        <p class="hint">選擇一個職業路線（選擇後可換職，已分配點數將重置）：</p>
+        <div class="talent-spec-grid">
+          ${Object.entries(TALENT_SPECS).map(([key, spec]) => `
+            <div class="talent-spec-card">
+              <div class="talent-spec-icon">${spec.icon}</div>
+              <div class="talent-spec-name">${spec.name}</div>
+              <div class="talent-spec-desc">${spec.desc}</div>
+              <button class="btn talent-spec-btn" data-spec="${key}">選擇職業</button>
+            </div>`).join('')}
+        </div>`;
+      panel.querySelectorAll('.talent-spec-btn').forEach(btn => {
+        btn.addEventListener('click', () => chooseTalentSpec(btn.dataset.spec));
+      });
+    } else {
+      const spec = TALENT_SPECS[state.talentSpec];
+      const alloc = state.talentAlloc || {};
+      panel.innerHTML = `
+        <div class="talent-spec-header">
+          <span>${spec.icon} ${spec.name} — ${spec.desc}</span>
+          <button class="btn talent-change-btn">換職業</button>
+        </div>
+        <div class="talent-grid">
+          ${spec.talents.map(t => {
+            const level = alloc[t.id] || 0;
+            const maxed = level >= t.maxLevel;
+            const canAlloc = !maxed && tp > 0;
+            return `<div class="talent-card${maxed ? ' maxed' : ''}">
+              <div class="talent-name">${t.name}</div>
+              <div class="talent-desc">${t.desc}</div>
+              <div class="talent-level">Lv.${level}/${t.maxLevel}</div>
+              <button class="talent-alloc-btn" data-talent="${t.id}" ${!canAlloc ? 'disabled' : ''}>分配（消耗 1 點）</button>
+            </div>`;
+          }).join('')}
+        </div>`;
+      panel.querySelectorAll('.talent-change-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.talentSpec = null;
+          state.talentAlloc = {};
+          recalcStatsFromBaseAndEquipment();
+          updateStats();
+          renderTalent();
+        });
+      });
+      panel.querySelectorAll('.talent-alloc-btn').forEach(btn => {
+        btn.addEventListener('click', () => allocateTalent(btn.dataset.talent));
+      });
+    }
+  }
+
+  function chooseTalentSpec(spec) {
+    if (!TALENT_SPECS[spec]) return;
+    state.talentSpec = spec;
+    state.talentAlloc = {};
+    recalcStatsFromBaseAndEquipment();
+    updateStats();
+    renderTalent();
+    log(`選擇職業：${TALENT_SPECS[spec].name}`, '', 'system');
+  }
+
+  function allocateTalent(talentId) {
+    const alloc = state.talentAlloc || {};
+    const currentLevel = alloc[talentId] || 0;
+    let maxLevel = 1;
+    for (const spec of Object.values(TALENT_SPECS)) {
+      const t = spec.talents.find(t => t.id === talentId);
+      if (t) { maxLevel = t.maxLevel; break; }
+    }
+    if (currentLevel >= maxLevel) return;
+    if ((state.talentPoints || 0) <= 0) return;
+    state.talentAlloc = state.talentAlloc || {};
+    state.talentAlloc[talentId] = currentLevel + 1;
+    state.talentPoints = state.talentPoints - 1;
+    recalcStatsFromBaseAndEquipment();
+    updateStats();
+    renderTalent();
+    log(`分配天賦：${talentId} Lv.${state.talentAlloc[talentId]}`, '', 'system');
+  }
+
+  // ----- Phase 3: Log filter -----
+  function initLogFilter() {
+    const bar = document.getElementById('logFilterBar');
+    if (!bar) return;
+    bar.querySelectorAll('.log-filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        bar.querySelectorAll('.log-filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.logFilter = btn.dataset.filter || 'all';
+        renderGameLog();
+      });
+    });
+  }
+
+  // ----- Phase 3: Offline earnings -----
+  function initOfflineRewards() {
+    const now = Date.now();
+    const lastSave = state.lastSaveTime || 0;
+    state.lastSaveTime = now;
+    if (lastSave === 0) return;
+    const elapsed = now - lastSave;
+    if (elapsed < MIN_OFFLINE_MS) return;
+    const elapsedCapped = Math.min(elapsed, MAX_OFFLINE_MS);
+    const elapsedMinutes = Math.floor(elapsedCapped / 60000);
+    const stage = Math.max(1, state.stage || 1);
+    const goldEarned = elapsedMinutes * stage * 2;
+    const matsEarned = Math.max(1, Math.floor(elapsedMinutes * 0.5));
+    state.gold += goldEarned;
+    const matId = 'mat_' + rand(1, 4);
+    state.materials[matId] = (state.materials[matId] || 0) + matsEarned;
+    log(`💤 離線收益（${elapsedMinutes} 分鐘）：💰 ${goldEarned}，魔獸殘片 x${matsEarned}`, 'loot-up', 'system');
+    const modal = document.getElementById('offlineModal');
+    const summEl = document.getElementById('offlineSummary');
+    if (summEl) summEl.textContent = `離線 ${elapsedMinutes} 分鐘（第 ${stage} 層）→ 💰 ${goldEarned}，魔獸殘片 x${matsEarned}`;
+    if (modal) modal.classList.remove('hidden');
+  }
+
   // ----- 分頁 -----
   function initTabs() {
     document.querySelectorAll('.tab').forEach(tab => {
@@ -957,6 +1249,7 @@
         const id = tab.dataset.tab;
         const panel = document.getElementById(id);
         if (panel) panel.classList.add('active');
+        showPanelTip(id);
       });
     });
   }
@@ -996,4 +1289,36 @@
   renderQuests();
   renderAchievements();
   renderCatalogue();
+  renderTalent();
+  initLogFilter();
+  initOfflineRewards();
+
+  // Phase 3: tip close buttons (event delegation)
+  if (document.addEventListener) {
+    document.addEventListener('click', function (e) {
+      const btn = e.target;
+      if (btn && btn.classList && btn.classList.contains('tip-close')) {
+        const tipId = btn.getAttribute('data-tip');
+        if (!tipId) return;
+        const el = document.getElementById(tipId);
+        if (el && el.classList) el.classList.add('hidden');
+        state.seenTips = state.seenTips || {};
+        state.seenTips[tipId] = true;
+      }
+    });
+  }
+
+  // Phase 3: story modal close
+  const storyCloseBtn = document.getElementById('btnStoryClose');
+  if (storyCloseBtn) storyCloseBtn.addEventListener('click', function () {
+    const modal = document.getElementById('storyModal');
+    if (modal) modal.classList.add('hidden');
+  });
+
+  // Phase 3: offline modal close
+  const offlineCloseBtn = document.getElementById('btnOfflineClose');
+  if (offlineCloseBtn) offlineCloseBtn.addEventListener('click', function () {
+    const modal = document.getElementById('offlineModal');
+    if (modal) modal.classList.add('hidden');
+  });
 })();

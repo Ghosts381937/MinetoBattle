@@ -32,11 +32,13 @@
       <button class="tab" data-tab="quests">任務</button>
       <button class="tab" data-tab="achievements">成就</button>
       <button class="tab" data-tab="catalogue">圖鑑</button>
+      <button class="tab" data-tab="talent">天賦</button>
     </nav>
 
     <main class="content">
       <!-- 商店 -->
       <section id="store" class="panel active">
+        <div id="tipStore" class="tip-bubble hidden">💡 提示：先購買召喚石，再前往召喚祭壇開始冒險。特殊商品可用靈晶💎購買。<button class="tip-close" data-tip="tipStore">×</button></div>
         <h2>🏪 商店 - 購買召喚石與補給</h2>
         <div id="storeList" class="item-grid"></div>
         <div class="shop-special">
@@ -50,6 +52,7 @@
 
       <!-- 召喚祭壇 -->
       <section id="altar" class="panel">
+        <div id="tipAltar" class="tip-bubble hidden">💡 提示：普通召喚消耗初級召喚石；精英/元素召喚需對應特殊召喚石。<button class="tip-close" data-tip="tipAltar">×</button></div>
         <h2>⛩ 召喚祭壇</h2>
         <p class="hint">選擇召喚類型：普通/精英/元素，不同類型掉落邏輯有所區別。精英石可從特殊商品購得（需靈晶💎）。</p>
         <div class="altar-actions">
@@ -62,10 +65,12 @@
 
       <!-- 戰鬥 -->
       <section id="battle" class="panel">
+        <div id="tipBattle" class="tip-bubble hidden">💡 提示：使用防禦獲得護盾減傷；重擊傷害高但消耗自身 HP，可觸發流血和暈眩。<button class="tip-close" data-tip="tipBattle">×</button></div>
         <h2>⚔️ 戰鬥</h2>
         <p class="hint">選擇普攻、重擊、防禦或治療，搭配裝備與屬性通關更高層數。</p>
         <div id="battleArea" class="battle-area">
           <div class="battle-empty" id="battleEmpty">請先到召喚祭壇召喚怪物</div>
+          <div id="floatLayer" class="float-layer"></div>
           <div id="battleActive" class="battle-active hidden">
             <div class="enemy-card">
               <div id="enemyName" class="enemy-name"></div>
@@ -129,12 +134,47 @@
         <p class="hint">記錄已遭遇的怪物種類與收集到的裝備詞綴。</p>
         <div id="catalogueList"></div>
       </section>
+
+      <!-- 天賦 -->
+      <section id="talent" class="panel">
+        <div id="tipTalent" class="tip-bubble hidden">💡 提示：每通過 5 層獲得 1 點天賦點數，選擇職業後可分配，效果永久生效。<button class="tip-close" data-tip="tipTalent">×</button></div>
+        <h2>🌟 天賦樹</h2>
+        <p class="hint">可用天賦點：<strong id="talentPoints">0</strong></p>
+        <div id="talentPanel"></div>
+      </section>
     </main>
 
     <footer class="footer">
+      <div id="logFilterBar" class="log-filter-bar">
+        <span>日誌：</span>
+        <button class="log-filter-btn active" data-filter="all">全部</button>
+        <button class="log-filter-btn" data-filter="system">系統</button>
+        <button class="log-filter-btn" data-filter="battle">戰鬥</button>
+        <button class="log-filter-btn" data-filter="loot">掉落</button>
+      </div>
       <div id="gameLog" class="game-log"></div>
     </footer>
   </div>
+
+  <!-- P3-03 劇情模態框 -->
+  <div id="storyModal" class="story-modal hidden">
+    <div class="story-modal-box">
+      <h3 id="storyTitle"></h3>
+      <p id="storyText"></p>
+      <div id="storyReward" class="story-reward"></div>
+      <button id="btnStoryClose" class="btn primary">繼續前進</button>
+    </div>
+  </div>
+
+  <!-- P3-05 離線收益模態框 -->
+  <div id="offlineModal" class="story-modal hidden">
+    <div class="story-modal-box">
+      <h3>💤 離線收益結算</h3>
+      <p id="offlineSummary"></p>
+      <button id="btnOfflineClose" class="btn primary">確認</button>
+    </div>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>
