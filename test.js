@@ -481,6 +481,78 @@ else fail('天賦點數獲得條件');
 if (appJs.includes('MIN_OFFLINE_MS') && (appJs.includes('60 * 1000') || appJs.includes('60000'))) ok('離線收益最小閾值 1 分鐘');
 else fail('離線收益最小閾值');
 
+// ========== [50] Server 結構 ==========
+console.log('\n[50] Server 結構 - 檔案檢查');
+const serverJsPath = path.join(dir, 'server.js');
+const pkgJsonPath = path.join(dir, 'package.json');
+
+if (!fs.existsSync(serverJsPath)) {
+  fail('server.js', '檔案不存在');
+} else {
+  ok('server.js 存在');
+  const serverJs = fs.readFileSync(serverJsPath, 'utf8');
+  if (serverJs.includes('/api/health')) ok('/api/health 端點定義存在');
+  else fail('/api/health 端點');
+  if (serverJs.includes('/api/save')) ok('/api/save 端點定義存在');
+  else fail('/api/save 端點');
+  if (serverJs.includes('/api/load')) ok('/api/load 端點定義存在');
+  else fail('/api/load 端點');
+  if (serverJs.includes('/api/leaderboard')) ok('/api/leaderboard 端點定義存在');
+  else fail('/api/leaderboard 端點');
+  if (serverJs.includes('express.static')) ok('靜態檔案服務（express.static）存在');
+  else fail('靜態檔案服務不存在');
+  if (serverJs.includes('express.json')) ok('JSON body parser 存在');
+  else fail('JSON body parser 不存在');
+}
+
+if (!fs.existsSync(pkgJsonPath)) {
+  fail('package.json', '檔案不存在');
+} else {
+  ok('package.json 存在');
+  try {
+    const pkg = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
+    if (pkg.scripts && pkg.scripts.start) ok('package.json scripts.start 存在');
+    else fail('package.json scripts.start');
+    if (pkg.dependencies && pkg.dependencies.express) ok('express 依賴已定義');
+    else fail('express 依賴未定義');
+  } catch (e) {
+    fail('package.json 解析失敗', e.message);
+  }
+}
+
+// ========== [50b] app.js - CS-03/04 整合 ==========
+console.log('\n[50b] app.js - Save/Load/Leaderboard 整合');
+if (appJs.includes('saveToServer') && appJs.includes('/api/save')) ok('saveToServer 函式與 /api/save 整合');
+else fail('saveToServer 函式或 API 路徑缺失');
+
+if (appJs.includes('loadFromServer') && appJs.includes('/api/load')) ok('loadFromServer 函式與 /api/load 整合');
+else fail('loadFromServer 函式或 API 路徑缺失');
+
+if (appJs.includes('loadFromLocalStorage') && appJs.includes('LS_KEY')) ok('localStorage 降級容錯邏輯存在');
+else fail('localStorage 降級容錯邏輯缺失');
+
+if (appJs.includes('renderLeaderboard') && appJs.includes('/api/leaderboard')) ok('renderLeaderboard 函式與 API 整合');
+else fail('renderLeaderboard 函式或 API 路徑缺失');
+
+if (appJs.includes('submitLeaderboard') && appJs.includes('calcScore')) ok('submitLeaderboard / calcScore 函式存在');
+else fail('submitLeaderboard / calcScore 函式缺失');
+
+if (appJs.includes('initServerButtons')) ok('initServerButtons 初始化函式存在');
+else fail('initServerButtons 函式缺失');
+
+if (appJs.includes('escHtml')) ok('escHtml XSS 防護函式存在');
+else fail('escHtml 函式缺失');
+
+// ========== [50c] index.html - 排行榜結構 ==========
+console.log('\n[50c] index.html - 排行榜結構');
+const lbIds = ['leaderboardList', 'btnSaveGame', 'btnLoadGame', 'btnRefreshLeaderboard', 'saveStatus'];
+for (const id of lbIds) {
+  if (html.includes(`id="${id}"`) || html.includes(`id='${id}'`)) ok('id="' + id + '"');
+  else fail('id="' + id + '"');
+}
+if (html.includes('data-tab="leaderboard"') || html.includes("data-tab='leaderboard'")) ok('分頁「排行榜」存在');
+else fail('分頁「排行榜」不存在');
+
 // ========== 結果 ==========
 console.log('\n' + '─'.repeat(50));
 console.log(`通過: ${passed}  失敗: ${failed}`);
