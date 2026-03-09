@@ -2,3 +2,4 @@
 node_modules/
 data/saves.json
 data/leaderboard.json
+data/users.json
