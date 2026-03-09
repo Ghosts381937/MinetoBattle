@@ -6,7 +6,7 @@
 
 ## 1. 核心循環
 
-`商店/特殊商店 → 召喚祭壇（普通/精英/元素）→ 戰鬥 → 掉落 → 交易所/背包/任務成就/天賦 → 循環`
+`商店/特殊商店 → 戰鬥分頁（無怪時召喚；有怪時戰鬥）→ 掉落 → 交易所/背包/任務成就/天賦 → 循環`
 
 ---
 
@@ -15,20 +15,20 @@
 目前分頁：
 
 1. 商店
-2. 召喚祭壇
-3. 戰鬥
-4. 交易所
-5. 背包
-6. 任務
-7. 成就
-8. 圖鑑
-9. 天賦
+2. 戰鬥（含召喚區）
+3. 交易所
+4. 背包
+5. 任務
+6. 成就
+7. 圖鑑
+8. 天賦
+9. 排行榜
 
 ### 2.1 狀態資訊分層（最新 UI）
 
 - 頂部常駐：`gold`, `power`, `hp/hpMax`, `def`, `gems`
-- 祭壇區顯示：`summonStones`, `eliteStones`, `elementStones`
-- 戰鬥區顯示：`stage`, `stageProgress/stageTarget`
+- 戰鬥分頁（無敵人時召喚區）顯示：`summonStones`, `eliteStones`, `elementStones`
+- 戰鬥區顯示：`stage`, `stageProgress/stageTarget` 與戰鬥操作
 
 ---
 
@@ -198,7 +198,7 @@
 
 ### 11.1 新手提示
 
-- 商店、祭壇、戰鬥、天賦分頁有一次性提示氣泡
+- 商店、戰鬥（含召喚提示）、天賦分頁有一次性提示氣泡
 
 ### 11.2 日誌分類
 
@@ -236,6 +236,20 @@
 
 ---
 
-## 14. 文件定位
+## 14. Client/Server 架構（MVP）
+
+- 目前為單一 Node/Express 服務：同時提供前端靜態檔與 API。
+- 主要 API：
+	- `GET /api/health`
+	- `POST /api/save`
+	- `GET /api/load`
+	- `GET /api/leaderboard`
+	- `POST /api/leaderboard`
+- 後端資料目前採 JSON file（`data/saves.json`, `data/leaderboard.json`）。
+- 前端有 server 優先 + localStorage fallback 的存檔策略。
+
+---
+
+## 15. 文件定位
 
 本文件作為「目前可玩版本」的設計基線，後續功能調整請同步更新本檔。
