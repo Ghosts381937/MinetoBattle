@@ -321,7 +321,7 @@
 
   function resetPlayerToInitial() {
     // Submit leaderboard score and snapshot the death state before resetting
-    submitLeaderboard('冒險者');
+    submitLeaderboard(getPlayerDisplayName());
     saveToServer(null);
 
     // Preserve quest/achievement/catalogue progress and gems across death
@@ -1283,9 +1283,156 @@
   // ─── CS-02/03: Save / Load (API with localStorage fallback) ──────────────
 
   var SAVE_SLOT = 'default';
-  var LS_KEY = 'minetobattle_save';
+  var LS_KEY_BASE = 'minetobattle_save';
+  var AUTH_TOKEN_KEY = 'minetobattle_auth_token';
+  var AUTH_USER_KEY = 'minetobattle_auth_user';
+  var currentAuthUser = '';
+  var authToken = '';
   var _autoSaveTimer = null;
   var AUTO_SAVE_DELAY_MS = 2000; // debounce: 2 s after last action
+
+  function getPlayerDisplayName() {
+    return currentAuthUser || '冒險者';
+  }
+
+  function getLocalSaveKey() {
+    return currentAuthUser ? (LS_KEY_BASE + '_' + currentAuthUser) : (LS_KEY_BASE + '_guest');
+  }
+
+  function getAuthHeaders() {
+    if (!authToken) return {};
+    return { Authorization: 'Bearer ' + authToken };
+  }
+
+  function isLoggedIn() {
+    return !!(currentAuthUser && authToken);
+  }
+
+  function setAuthState(username, token) {
+    currentAuthUser = username || '';
+    authToken = token || '';
+    try {
+      if (currentAuthUser && authToken) {
+        localStorage.setItem(AUTH_USER_KEY, currentAuthUser);
+        localStorage.setItem(AUTH_TOKEN_KEY, authToken);
+      } else {
+        localStorage.removeItem(AUTH_USER_KEY);
+        localStorage.removeItem(AUTH_TOKEN_KEY);
+      }
+    } catch (e) { /* ignore */ }
+    renderAuthStatus();
+  }
+
+  function renderAuthStatus(message) {
+    var authBar = document.querySelector('.auth-bar');
+    var statusEl = document.getElementById('authStatus');
+    var logoutBtn = document.getElementById('btnLogout');
+    var userInput = document.getElementById('authUsername');
+    var passInput = document.getElementById('authPassword');
+    var registerBtn = document.getElementById('btnRegister');
+    var loginBtn = document.getElementById('btnLogin');
+    var logged = isLoggedIn();
+
+    if (authBar && authBar.classList) authBar.classList.toggle('logged-in', logged);
+
+    if (userInput) userInput.classList.toggle('hidden', logged);
+    if (passInput) passInput.classList.toggle('hidden', logged);
+    if (registerBtn) registerBtn.classList.toggle('hidden', logged);
+    if (loginBtn) loginBtn.classList.toggle('hidden', logged);
+    if (logoutBtn) logoutBtn.disabled = !isLoggedIn();
+    if (!statusEl) return;
+    if (message) {
+      statusEl.textContent = message;
+      return;
+    }
+    statusEl.textContent = logged
+      ? ('已登入：' + currentAuthUser + '（伺服器存檔綁定此帳號）')
+      : '未登入（僅本地存檔）';
+  }
+
+  function registerPlayer() {
+    var userInput = document.getElementById('authUsername');
+    var passInput = document.getElementById('authPassword');
+    var username = userInput ? userInput.value.trim().toLowerCase() : '';
+    var password = passInput ? passInput.value : '';
+    if (!username || !password) {
+      renderAuthStatus('請輸入帳號與密碼');
+      return;
+    }
+    fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: username, password: password })
+    }).then(function (r) {
+      return r.json().then(function (body) { return { ok: r.ok, body: body }; });
+    }).then(function (result) {
+      if (!result.ok || !result.body || !result.body.ok) {
+        renderAuthStatus('註冊失敗：' + ((result.body && result.body.error) || '未知錯誤'));
+        return;
+      }
+      setAuthState(result.body.username, result.body.token);
+      if (passInput) passInput.value = '';
+      renderAuthStatus('註冊成功，已登入：' + result.body.username);
+      loadFromServer(function () { /* ignore */ });
+    }).catch(function () {
+      renderAuthStatus('註冊失敗：無法連線伺服器');
+    });
+  }
+
+  function loginPlayer() {
+    var userInput = document.getElementById('authUsername');
+    var passInput = document.getElementById('authPassword');
+    var username = userInput ? userInput.value.trim().toLowerCase() : '';
+    var password = passInput ? passInput.value : '';
+    if (!username || !password) {
+      renderAuthStatus('請輸入帳號與密碼');
+      return;
+    }
+    fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: username, password: password })
+    }).then(function (r) {
+      return r.json().then(function (body) { return { ok: r.ok, body: body }; });
+    }).then(function (result) {
+      if (!result.ok || !result.body || !result.body.ok) {
+        renderAuthStatus('登入失敗：' + ((result.body && result.body.error) || '未知錯誤'));
+        return;
+      }
+      setAuthState(result.body.username, result.body.token);
+      if (passInput) passInput.value = '';
+      renderAuthStatus('登入成功：' + result.body.username);
+      loadFromServer(function () { /* ignore */ });
+    }).catch(function () {
+      renderAuthStatus('登入失敗：無法連線伺服器');
+    });
+  }
+
+  function logoutPlayer() {
+    setAuthState('', '');
+    renderAuthStatus('已登出，切回本地存檔');
+    loadFromLocalStorage(function () { /* ignore */ });
+  }
+
+  function initAuthUI() {
+    var registerBtn = document.getElementById('btnRegister');
+    var loginBtn = document.getElementById('btnLogin');
+    var logoutBtn = document.getElementById('btnLogout');
+    if (registerBtn) registerBtn.addEventListener('click', registerPlayer);
+    if (loginBtn) loginBtn.addEventListener('click', loginPlayer);
+    if (logoutBtn) logoutBtn.addEventListener('click', logoutPlayer);
+    try {
+      const savedUser = localStorage.getItem(AUTH_USER_KEY) || '';
+      const savedToken = localStorage.getItem(AUTH_TOKEN_KEY) || '';
+      if (savedUser && savedToken) {
+        setAuthState(savedUser, savedToken);
+      } else {
+        renderAuthStatus();
+      }
+    } catch (e) {
+      renderAuthStatus();
+    }
+  }
 
   function autoSave() {
     if (_autoSaveTimer) clearTimeout(_autoSaveTimer);
@@ -1306,27 +1453,29 @@
 
   function saveToServer(callback) {
     var payload = JSON.stringify({ slot: SAVE_SLOT, state: state });
-    if (typeof fetch !== 'undefined') {
+    if (typeof fetch !== 'undefined' && isLoggedIn()) {
       fetch('/api/save', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: Object.assign({ 'Content-Type': 'application/json' }, getAuthHeaders()),
         body: payload
       }).then(function (r) { return r.json(); }).then(function (data) {
-        try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
+        try { localStorage.setItem(getLocalSaveKey(), JSON.stringify(state)); } catch (e) { /* ignore */ }
         if (callback) callback(null, data);
       }).catch(function (err) {
-        try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
+        try { localStorage.setItem(getLocalSaveKey(), JSON.stringify(state)); } catch (e) { /* ignore */ }
         if (callback) callback(err);
       });
     } else {
-      try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
+      try { localStorage.setItem(getLocalSaveKey(), JSON.stringify(state)); } catch (e) { /* ignore */ }
       if (callback) callback(null, { ok: true, local: true });
     }
   }
 
   function loadFromServer(callback) {
-    if (typeof fetch !== 'undefined') {
-      fetch('/api/load?slot=' + SAVE_SLOT)
+    if (typeof fetch !== 'undefined' && isLoggedIn()) {
+      fetch('/api/load?slot=' + SAVE_SLOT, {
+        headers: getAuthHeaders()
+      })
         .then(function (r) { return r.json(); })
         .then(function (data) {
           if (data && data.ok && data.state) {
@@ -1345,7 +1494,7 @@
 
   function loadFromLocalStorage(callback) {
     try {
-      var raw = localStorage.getItem(LS_KEY);
+      var raw = localStorage.getItem(getLocalSaveKey());
       if (raw) {
         var saved = JSON.parse(raw);
         applyLoadedState(saved);
@@ -1490,6 +1639,7 @@
   initLogFilter();
   initOfflineRewards();
   initServerButtons();
+  initAuthUI();
   autoLoad();
 
   // Phase 3: tip close buttons (event delegation)

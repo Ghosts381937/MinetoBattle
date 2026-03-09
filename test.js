@@ -124,7 +124,7 @@ function createMockDoc() {
         store[id] = {
           textContent: '',
           innerHTML: '',
-          classList: { add: () => {}, remove: () => {}, contains: () => false },
+          classList: { add: () => {}, remove: () => {}, contains: () => false, toggle: () => {} },
           appendChild: () => {},
           scrollTop: 0,
           scrollHeight: 0,
@@ -141,6 +141,11 @@ function createMockDoc() {
         className: '',
         appendChild: () => {},
         style: {}
+      };
+    },
+    querySelector() {
+      return {
+        classList: { add: () => {}, remove: () => {}, contains: () => false, toggle: () => {} }
       };
     },
     querySelectorAll: () => []
@@ -565,6 +570,29 @@ for (const id of lbIds) {
 }
 if (html.includes('data-tab="leaderboard"') || html.includes("data-tab='leaderboard'")) ok('分頁「排行榜」存在');
 else fail('分頁「排行榜」不存在');
+
+// ========== [51] Auth UI - 登入後隱藏輸入欄位 ==========
+console.log('\n[51] Auth UI - 登入後隱藏輸入欄位');
+const authIds = ['authUsername', 'authPassword', 'btnRegister', 'btnLogin', 'btnLogout', 'authStatus'];
+for (const id of authIds) {
+  if (html.includes(`id="${id}"`) || html.includes(`id='${id}'`)) ok('id="' + id + '"');
+  else fail('id="' + id + '"');
+}
+
+if (appJs.includes('function renderAuthStatus')) ok('renderAuthStatus 函式存在');
+else fail('renderAuthStatus 函式缺失');
+
+if (appJs.includes("userInput.classList.toggle('hidden', logged)") &&
+    appJs.includes("passInput.classList.toggle('hidden', logged)") &&
+    appJs.includes("registerBtn.classList.toggle('hidden', logged)") &&
+    appJs.includes("loginBtn.classList.toggle('hidden', logged)")) {
+  ok('登入狀態會隱藏帳號/密碼/註冊/登入元件');
+} else {
+  fail('登入後隱藏 UI 邏輯缺失');
+}
+
+if (css.includes('.hidden') && css.includes('display: none')) ok('.hidden 樣式可正確隱藏元素');
+else fail('.hidden 樣式缺失或無 display: none');
 
 // ========== 結果 ==========
 console.log('\n' + '─'.repeat(50));

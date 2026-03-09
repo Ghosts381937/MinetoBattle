@@ -10,6 +10,14 @@
   <div class="app">
     <header class="header">
       <h1>MinetoBattle</h1>
+      <div class="auth-bar">
+        <input id="authUsername" type="text" placeholder="帳號 (a-z0-9_)" autocomplete="username" />
+        <input id="authPassword" type="password" placeholder="密碼 (至少6碼)" autocomplete="current-password" />
+        <button id="btnRegister" class="btn">註冊</button>
+        <button id="btnLogin" class="btn primary">登入</button>
+        <button id="btnLogout" class="btn" disabled>登出</button>
+        <span id="authStatus" class="auth-status">未登入（僅本地存檔）</span>
+      </div>
       <div class="player-stats">
         <span>💰 金錢: <strong id="gold">100</strong></span>
         <span>⚔️ 戰力: <strong id="power">10</strong></span>
